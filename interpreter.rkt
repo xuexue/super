@@ -47,6 +47,8 @@
   (let ((kv (assq key env)))
     (if kv (cdr kv) (error "unbound variable" key))))
 
+(struct closure (param* body env) #:prefab)
+
 (define (eval expr env)
   (define (expr-arity=?! n)
     (let ((arity (length (cdr expr))))
@@ -93,7 +95,7 @@
     [(atom=? (car expr) 'lambda)
      (let ((params (cadr expr))
            (body   (caddr expr)))
-        (list 'closure params body))]
+        (closure params body env))]
     [else
      expr]))
 
