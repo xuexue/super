@@ -86,6 +86,7 @@
                   )
             (error "to many arguments argument in" op)))]
     [(atom=? (car expr) 'if)
+     (expr-arity=?! 3)
      (if (eval (cadr expr) env)
          (eval (caddr expr) env)
          (eval (cadddr expr) env))]
