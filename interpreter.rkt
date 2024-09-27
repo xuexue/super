@@ -61,14 +61,20 @@
          (cons (eval (cadr expr) env)
                (eval (caddr expr) env))
          (error "invalid cons" expr))]
-    [(or (atom=? (car expr) 'car) (atom=? (car expr) 'cdr))
-     (if (atom=? (cddr expr) '())
-         (let ((op (car expr))
-               (v (eval (cadr expr) env)))
-            (if (pair? v)
-                (if (atom=? op 'car) (car v) (cdr v))
-                (error "car/cdr expects a pair")))
-         (error "invalid car/cdr expr"))]
+    [(member-atom (car expr) '(null? boolean? pair? number? symbol? procedure? car cdr))
+     (let ((op (car expr))
+           (v  (eval (cadr expr) env)))
+        (if (atom=? (cddr expr) '())
+            (cond [(atom=? op 'car)        (car v)]
+                  [(atom=? op 'cdr)        (cdr v)]
+                  [(atom=? op 'null?)      (null? v)]
+                  [(atom=? op 'boolean)    (boolean? v)]
+                  [(atom=? op 'pair?)      (pair? v)]
+                  [(atom=? op 'number?)    (number? v)]
+                  [(atom=? op 'symbol?)    (symbol? v)]
+                  [(atom=? op 'procedure?) (procedure? v)]
+                  )
+            (error "to many arguments argument in" op)))]
     [else
      expr]))
 
@@ -86,6 +92,10 @@
   (test-equal? "eval cdr of cons of two atoms"
                (eval '(cdr (cons (quote 0) (quote 1))) env.empty)
                1)
+  (test-equal? "eval numl? quote 0"
+               (eval '(number? (quote 0)) env.empty)
+               #t)
+
 
 )
 
