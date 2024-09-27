@@ -47,12 +47,16 @@
     (if kv (cdr kv) (error "unbound variable" key))))
 
 (define (eval expr env)
+  (define (expr-arity=?! n)
+    (let ((arity (length (cdr expr))))
+      (unless (atom=? arity n)
+        (error "invalid expression arity" expr 'expected n 'actual arity))))
   (cond
     [(symbol? expr)
      (lookup env expr)]
     [(not (pair? expr))
      (error "invalid expression")]
-    [(and (atom=? (car expr) 'quote) (atom? (cadr expr)))
+    [(and (atom=? (car expr) 'quote) (expr-arity=?! 1) (atom? (cadr expr)))
      (if (atom=? (cddr expr) '())
          (cadr expr)
          (error "invalid quote" expr))]
