@@ -34,14 +34,14 @@
      (lookup env expr)]
     [(not (pair? expr))
      (error "invalid expression")]
-    [(and (atom=? (car expr) 'quote) (atom? (car (cdr expr))))
-     (if (atom=? (cdr (cdr expr)) '())
-         (car (cdr expr))
+    [(and (atom=? (car expr) 'quote) (atom? (cadr expr)))
+     (if (atom=? (cddr expr) '())
+         (cadr expr)
          'error)] ; todo
     [(atom=? (car expr) 'cons)
-     (if (atom=? (cdr (cdr (cdr expr))) '())
-         (cons (eval (car (cdr expr)) env)
-               (eval (car (cdr (cdr expr))) env))
+     (if (atom=? (cdddr expr) '())
+         (cons (eval (cadr expr) env)
+               (eval (caddr expr) env))
          'error)]
     [else
      expr]))
