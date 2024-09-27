@@ -84,6 +84,10 @@
                   [(atom=? op 'procedure?) (procedure? v)]
                   )
             (error "to many arguments argument in" op)))]
+    [(atom=? (car expr) 'if)
+     (if (eval (cadr expr) env)
+         (eval (caddr expr) env)
+         (eval (cadddr expr) env))]
     [else
      expr]))
 
@@ -107,6 +111,10 @@
   (test-equal? "eval comparison of numbers"
                (eval '(atom=? (quote 0) (quote 1)) env.empty)
                #f)
+  (test-equal? "eval if expression"
+               (eval '(if (quote #t) (quote 0) (quote 1)) env.empty)
+               0)
+
 
 
 )
