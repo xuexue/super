@@ -96,6 +96,10 @@
      (let ((params (cadr expr))
            (body   (caddr expr)))
         (closure params body env))]
+    [(atom=? (car expr) 'call)
+     (let ((fnexpr (cadr expr))
+           (argexpr (cddr expr)))
+        '())
     [else
      expr]))
 
