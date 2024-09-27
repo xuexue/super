@@ -56,11 +56,14 @@
      (if (atom=? (cddr expr) '())
          (cadr expr)
          (error "invalid quote" expr))]
-    [(atom=? (car expr) 'cons)
-     (if (atom=? (cdddr expr) '())
-         (cons (eval (cadr expr) env)
-               (eval (caddr expr) env))
-         (error "invalid cons" expr))]
+    [(member-atom (car expr) '(cons atom=?))
+     (let ((op (car expr))
+           (v1 (eval (cadr expr) env))
+           (v2 (eval (caddr expr) env)))
+        (if (atom=? (cdddr expr) '())
+            (cond [(atom=? op 'cons)   (cons v1 v2)]
+                  [(atom=? op 'atom=?) (atom=? v1 v2)])
+            (error "to many arguments argument in" op)))]
     [(member-atom (car expr) '(null? boolean? pair? number? symbol? procedure? car cdr))
      (let ((op (car expr))
            (v  (eval (cadr expr) env)))
@@ -95,6 +98,9 @@
   (test-equal? "eval numl? quote 0"
                (eval '(number? (quote 0)) env.empty)
                #t)
+  (test-equal? "eval comparison of numbers"
+               (eval '(atom=? (quote 0) (quote 1)) env.empty)
+               #f)
 
 
 )
