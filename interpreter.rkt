@@ -20,6 +20,12 @@
 (define (cddar x) (cdr (cdr (car x))))
 (define (cdddr x) (cdr (cdr (cdr x))))
 
+(define (member-atom a a*)
+  (and (pair? a*)
+       (if (atom=? (car a*) a)
+           a*
+           (member-atom a (cdr a*)))))
+
 (define env.empty '())
 (define (env-extend env k v) (cons (cons k v) env))
 
