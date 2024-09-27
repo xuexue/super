@@ -20,18 +20,19 @@
     [(symbol? expr)
      (lookup env expr)]
     [(and (pair? expr) (atom=? (car expr) 'quote))
-     (if (atom=? (cdr (cdr expr) '()))
+     (if (atom=? (cdr (cdr expr)) '())
          (car (cdr expr))
          'error)] ; todo
     [(and (pair? expr) (atom=? (car expr) 'cons))
      (if (atom=? (cdr (cdr (cdr expr))) '())
-         (cons (car expr) (car (cdr expr))))]
+         (cons (car expr) (car (cdr expr)))
+         'error)]
     [else
      expr]))
      
 
 (module+ test
   (test-equal? "eval atom"
-               (eval '(quote ()))
+               (eval '(quote ()) env.empty)
                '()))
 
