@@ -61,6 +61,7 @@
          (cadr expr)
          (error "invalid quote" expr))]
     [(member-atom (car expr) '(cons atom=?))
+     (expr-arity=?! 2)
      (let ((op (car expr))
            (v1 (eval (cadr expr) env))
            (v2 (eval (caddr expr) env)))
@@ -69,6 +70,7 @@
                   [(atom=? op 'atom=?) (atom=? v1 v2)])
             (error "to many arguments argument in" op)))]
     [(member-atom (car expr) '(null? boolean? pair? number? symbol? procedure? car cdr))
+     (expr-arity=?! 1)
      (let ((op (car expr))
            (v  (eval (cadr expr) env)))
         (if (atom=? (cddr expr) '())
