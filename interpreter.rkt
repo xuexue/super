@@ -25,7 +25,8 @@
          'error)] ; todo
     [(and (pair? expr) (atom=? (car expr) 'cons))
      (if (atom=? (cdr (cdr (cdr expr))) '())
-         (cons (car expr) (car (cdr expr)))
+         (cons (eval (car expr) env)
+               (eval (car (cdr expr)) env))
          'error)]
     [else
      expr]))
