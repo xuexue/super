@@ -20,6 +20,18 @@
 (define (cddar x) (cdr (cdr (car x))))
 (define (cdddr x) (cdr (cdr (cdr x))))
 
+(define (equal? a b)
+  (cond
+    ((pair? a) (and (pair? b)
+                    (equal? (car a) (car b))
+                    (equal? (cdr a) (cdr b))))
+    (else (atom=? a b))))
+
+(define (length x*)
+  (if (null? x*)
+      0
+      (+ (length (cdr x*)) 1)))
+
 (define (member-atom a a*)
   (and (pair? a*)
        (if (atom=? (car a*) a)
