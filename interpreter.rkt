@@ -37,12 +37,12 @@
     [(and (atom=? (car expr) 'quote) (atom? (cadr expr)))
      (if (atom=? (cddr expr) '())
          (cadr expr)
-         'error)] ; todo
+         (error "invalid quote" expr))]
     [(atom=? (car expr) 'cons)
      (if (atom=? (cdddr expr) '())
          (cons (eval (cadr expr) env)
                (eval (caddr expr) env))
-         'error)]
+         (error "invalid cons" expr))]
     [(or (atom=? (car expr) 'car) (atom=? (car expr) 'cdr))
      (if (atom=? (cddr expr) '())
          (let ((op (car expr))
@@ -53,7 +53,7 @@
          (error "invalid car/cdr expr"))]
     [else
      expr]))
-     
+
 
 (module+ test
   (test-equal? "eval empty atom"
