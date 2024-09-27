@@ -90,6 +90,10 @@
      (if (eval (cadr expr) env)
          (eval (caddr expr) env)
          (eval (cadddr expr) env))]
+    [(atom=? (car expr) 'lambda)
+     (let ((params (cadr expr))
+           (body   (caddr expr)))
+        (list 'closure params body))]
     [else
      expr]))
 
