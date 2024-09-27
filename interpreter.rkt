@@ -19,11 +19,13 @@
   (cond
     [(symbol? expr)
      (lookup env expr)]
-    [(and (pair? expr) (atom=? (car expr) 'quote))
+    [(not (pair? expr))
+     (error "invalid expression")]
+    [(and (atom=? (car expr) 'quote) (atom? (car (cdr expr))))
      (if (atom=? (cdr (cdr expr)) '())
          (car (cdr expr))
          'error)] ; todo
-    [(and (pair? expr) (atom=? (car expr) 'cons))
+    [(atom=? (car expr) 'cons)
      (if (atom=? (cdr (cdr (cdr expr))) '())
          (cons (eval (car expr) env)
                (eval (car (cdr expr)) env))
