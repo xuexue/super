@@ -43,13 +43,14 @@
          (cons (eval (cadr expr) env)
                (eval (caddr expr) env))
          'error)]
-    [(atom=? (car expr) 'car)
+    [(or (atom=? (car expr) 'car) (atom=? (car expr) 'cdr))
      (if (atom=? (cddr expr) '())
-         (let ((v (eval (cadr expr) env)))
+         (let ((op (car expr))
+               (v (eval (cadr expr) env)))
             (if (pair? v)
-                (cdr v)
-                (error "car expects a pair")))
-         (error "invalid car expr"))]
+                (if (atom=? op 'car) (car v) (cdr v))
+                (error "car/cdr expects a pair")))
+         (error "invalid car/cdr expr"))]
     [else
      expr]))
      
@@ -62,8 +63,12 @@
                (eval '(cons (quote ()) (quote ())) env.empty)
                '(() . ()))
   (test-equal? "eval car of cons of two atoms"
-               (eval '(car (cons (quote ()) (quote ()))) env.empty)
-               '())
+               (eval '(car (cons (quote 0) (quote 1))) env.empty)
+               0)
+  (test-equal? "eval cdr of cons of two atoms"
+               (eval '(cdr (cons (quote 0) (quote 1))) env.empty)
+               1)
+
 )
 
 
