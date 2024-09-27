@@ -126,9 +126,21 @@
   (test-equal? "eval if expression"
                (eval '(if (quote #t) (quote 0) (quote 1)) env.empty)
                0)
-
-
-
+  (test-equal? "eval calling a zero argument function"
+               (eval '(call (lambda () (quote 4))) env.empty)
+               4)
+  (test-equal? "eval calling a one argument function"
+               (eval '(call (lambda (v) v) (quote 1)) env.empty)
+               1)
+  (test-equal? "eval calling a three argument function"
+               (eval '(call (lambda (x y z) y) (quote 1) (quote 2) (quote 3)) env.empty)
+               2)
+  (test-equal? "eval nested calling of functions"
+               (eval '(call (call (lambda (x) (lambda (y) x)) (quote 1)) (quote 2)) env.empty)
+               1)
+  (test-equal? "eval passing in functions as args"
+               (eval '(call (lambda (f x) (f x)) (lambda (x) x) (quote 1)) env.empty)
+               1)
 )
 
 
