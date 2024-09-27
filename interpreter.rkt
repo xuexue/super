@@ -27,15 +27,21 @@
          'error)] ; todo
     [(atom=? (car expr) 'cons)
      (if (atom=? (cdr (cdr (cdr expr))) '())
-         (cons (eval (car expr) env)
-               (eval (car (cdr expr)) env))
+         (cons (eval (car (cdr expr)) env)
+               (eval (car (cdr (cdr expr))) env))
          'error)]
     [else
      expr]))
      
 
 (module+ test
-  (test-equal? "eval atom"
+  (test-equal? "eval empty atom"
                (eval '(quote ()) env.empty)
-               '()))
+               '())
+  (test-equal? "eval cons of two atoms"
+               (eval '(cons (quote ()) (quote ())) env.empty)
+               '(() . ()))
+)
+
+
 
