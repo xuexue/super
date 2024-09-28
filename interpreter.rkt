@@ -10,61 +10,45 @@
       (unless (atom=? arity n)
         (error "invalid expression arity" expr 'expected n 'actual arity))))
   (cond
-    [(symbol? expr) (env-ref env expr)]
-    [(not (pair? expr)) (error "invalid expression")]
-    [(and (atom=? (car expr) 'quote) (expr-arity=?! 1) (atom? (cadr expr)))
-     (if (atom=? (cddr expr) '())
-         (cadr expr)
-         (error "invalid quote" expr))]
-    [(member-atom (car expr) '(cons atom=?))
-     (expr-arity=?! 2)
-     (let ((op (car expr))
-           (v1 (eval (cadr expr) env))
-           (v2 (eval (caddr expr) env)))
-        (if (atom=? (cdddr expr) '())
-            (cond [(atom=? op 'cons)   (cons v1 v2)]
-                  [(atom=? op 'atom=?) (atom=? v1 v2)])
-            (error "to many arguments argument in" op)))]
-    [(member-atom (car expr) '(null? boolean? pair? number? symbol? procedure? car cdr))
-     (expr-arity=?! 1)
-     (let ((op (car expr))
-           (v  (eval (cadr expr) env)))
-        (if (atom=? (cddr expr) '())
-            (cond [(atom=? op 'car)        (car v)]
-                  [(atom=? op 'cdr)        (cdr v)]
-                  [(atom=? op 'null?)      (null? v)]
-                  [(atom=? op 'boolean)    (boolean? v)]
-                  [(atom=? op 'pair?)      (pair? v)]
-                  [(atom=? op 'number?)    (number? v)]
-                  [(atom=? op 'symbol?)    (symbol? v)]
-                  [(atom=? op 'procedure?) (closure? v)]
-                  )
-            (error "to many arguments argument in" op)))]
-    [(atom=? (car expr) 'if)
-     (expr-arity=?! 3)
-     (if (eval (cadr expr) env)
-         (eval (caddr expr) env)
-         (eval (cadddr expr) env))]
-    [(lambda? expr) (make-closure expr env)]
-    [(atom=? (car expr) 'call)
-     (let ((proc (eval (cadr expr) env))
-           (arg* (map (lambda (rand) (eval rand env)) (cddr expr))))
-       (eval (closure-body proc)
-             (env-extend* (closure-env proc) (closure-param* proc) arg*)))]
-    [(atom=? (car expr) 'letrec)
-     (expr-arity=?! 2)
-     (let ((bpair* (cadr expr))
-           (body   (caddr expr)))
-       (unless (and (list? bpair*)
-                    (andmap list? bpair*)
-                    (andmap (lambda (bp) (= (length bp) 2)) bpair*))
-         (error "invalid binding pairs" bpair*))
-       (let ((x*   (map car bpair*))
-             (lam* (map cadr bpair*)))
-         (unless (param*? x*) (error "invalid letrec parameters" x*))
-         (unless (andmap lambda? lam*) (error "invalid lambdas" lam*))
-         (eval body (env-extend*/rec env x* lam*)))) ]
-    [else (error "invalid expression" expr)]))
+    ((symbol? expr) (env-ref env expr))
+    ((not (pair? expr)) (error "invalid expression" expr))
+    (else
+     (case (car expr)
+       ((quote) (expr-arity=?! 1) (cadr expr))
+       ((if) (expr-arity=?! 3) (if (eval (cadr expr) env)
+                                   (eval (caddr expr) env)
+                                   (eval (cadddr expr) env)))
+       ((call) (let ((proc (eval (cadr expr) env))
+                     (arg* (map (lambda (rand) (eval rand env)) (cddr expr))))
+                 (eval (closure-body proc)
+                       (env-extend* (closure-env proc) (closure-param* proc) arg*))))
+       ((lambda) (unless (lambda? expr) (error "invalid lambda" expr))
+                 (make-closure expr env))
+       ((letrec) (expr-arity=?! 2)
+                 (let ((bpair* (cadr expr))
+                       (body   (caddr expr)))
+                   (unless (and (list? bpair*)
+                                (andmap list? bpair*)
+                                (andmap (lambda (bp) (= (length bp) 2)) bpair*))
+                     (error "invalid binding pairs" bpair*))
+                   (let ((x*   (map car bpair*))
+                         (lam* (map cadr bpair*)))
+                     (unless (param*? x*) (error "invalid letrec parameters" x*))
+                     (unless (andmap lambda? lam*) (error "invalid lambdas" lam*))
+                     (eval body (env-extend*/rec env x* lam*)))))
+       (else (cond
+               ((assq (car expr) (map2 cons '(cons atom=?) (list cons atom=?)))
+                => (lambda (op-pair)
+                     (expr-arity=?! 2)
+                     ((cdr op-pair) (eval (cadr expr) env) (eval (caddr expr) env))))
+               ((assq (car expr)
+                      (map2 cons
+                            '(car cdr null? boolean? pair? number? symbol? procedure?)
+                            (list car cdr null? boolean? pair? number? symbol? closure?)))
+                => (lambda (op-pair)
+                     (expr-arity=?! 1)
+                     ((cdr op-pair) (eval (cadr expr) env))))
+               (else (error "invalid expression" expr))))))))
 
 (module+ test
   (test-equal? "eval empty atom"
