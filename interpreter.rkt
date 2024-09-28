@@ -121,17 +121,19 @@
            (arg* (map (lambda (rand) (eval rand env)) (cddr expr))))
        (eval (closure-body proc)
              (env-extend* (closure-env proc) (closure-param* proc) arg*)))]
-    [(and (atom=? (car expr) 'letrec) (atom=? (cadr expr) '())) ; base case for letrec
-     (eval (caddr expr) env)] ; todo check arity
     [(atom=? (car expr) 'letrec)
-     (let ((mapping-rest (cddr expr)) ; todo: arity check on expr
-           (sym          (car (car expr)))
-           (lam          (cadr (car expr))) ; todo: arity check on (car expr)
-           (body         (caddr expr)))
-       ; todo: check lam is actually a lambda
-       (letrec ((env-new (env-extend* env (list sym (eval lam env-new)))))
-         (eval (list 'letrec mapping-rest body) env-new))
-       )]
+     (expr-arity=?! 2)
+     (let ((bpair* (cadr expr))
+           (body   (caddr expr)))
+       (unless (and (list? bpair*)
+                    (andmap list? bpair*)
+                    (andmap (lambda (bp) (= (length bp) 2)) bpair*))
+         (error "invalid binding pairs" bpair*))
+       (let ((x*   (map car bpair*))
+             (lam* (map cadr bpair*)))
+         (unless (param*? x*) (error "invalid letrec parameters" x*))
+         (unless (andmap lambda? lam*) (error "invalid lambdas" lam*))
+         (eval body (env-extend*/rec env x* lam*)))) ]
     [else (error "invalid expression" expr)]))
 
 (module+ test
@@ -182,9 +184,9 @@
                (eval '(letrec ((f (lambda (x) f))) (call f (quote 1))) env.empty)
                '())
   (test-equal? "eval of a not weird letrec"
-               (eval '(letrec ((has0? (lambda (lst) 
+               (eval '(letrec ((has0? (lambda (lst)
                                           (if (pair? lst)
-                                              (if (atom=? (car lst) (quote 0)) (quote #t) (call has0? cdr lst))
+                                              (if (atom=? (car lst) (quote 0)) (quote #t) (call has0? (cdr lst)))
                                               (quote #f)))))
                          (call has0? (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ())))))) env.empty)
                #t)
