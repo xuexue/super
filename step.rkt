@@ -74,7 +74,7 @@
                      (rand* (cddr expr)))
                  (expr->frames proc env (cons (frame 'call '() rand* env) rest-frames))))
        ((lambda) (cons (frame expr '() '() env) rest-frames))
-       ((letrec) (error "TODO"))
+       ((letrec) (cons (frame expr '() '() env) rest-frames))
        (else (cond
                ((member-atom (car expr) '(cons atom=?))
                 => (lambda (op*)
