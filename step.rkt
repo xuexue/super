@@ -27,8 +27,11 @@
        (case op
          ((halt) frames)
          ((call)
-          (error "TODO")
-          )
+          (if (null? exprs)
+              (error "TODO: actually call the function")
+              (expr->frames (car exprs) ; TODO --- not actually correct
+                            env 
+                            (cons (frame 'call (frame-vals top) (cdr exprs) env) (cdr frames)))))
          (else
           (cond
             ((assq op (map2 cons '(cons atom=?) (list cons atom=?)))
