@@ -37,29 +37,4 @@ E ::=
     | (call E E ...)
     ;; recursive procedure binding
     | (letrec ((<symbol> LAM) ...) E)
-
-;; Frame:
-F ::=
-    ;; constructors
-    | (cons _ E)
-    | (cons V _)
-    ;; accessors
-    | (car _)
-    | (cdr _)
-    ;; predicates
-    | (atom=? _ E)
-    | (atom=? V _)
-    | (null? _)
-    | (boolean? _)
-    | (pair? _)
-    | (number? _)
-    | (symbol? _)
-    | (procedure? _)
-    ;; case analysis
-    | (if _ E E)
-    ;; procedure call
-    | (call _ E ...)
-    | (call V V ... _ E ... )
-    ;; recursive procedure binding
-    | (letrec ((<symbol> LAM) ...) _)
 ```
