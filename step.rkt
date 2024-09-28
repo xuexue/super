@@ -57,6 +57,8 @@
            (t (caddr expr))
            (e (cadddr expr)))
        (expr->frames c env (cons (frame 'if '() (list t e) env) rest-frames)))]
+    [(lambda? expr)
+     (cons (frame expr '() '() env) rest-frames)]
 ))
 
 
