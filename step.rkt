@@ -17,6 +17,7 @@
 (define (step frames)
   (let* ((top         (car frames))
          (op          (frame-op top))
+         (env         (frame-env top))
          (next        (and (pair? (cdr frames)) (cadr frames)))
          (rest-frames (and next (cddr frames))))
     (cond
@@ -43,21 +44,12 @@
       ((not (pair? op)) (error "invalid frame op" top))
       (else
        (case (car op)
-         ((lookup)
-          (error "TODO")
-          )
-         ((quote) (cons (frame-addval next (cadr op)) rest-frames))
-         ((if)
-          (error "TODO")
-          )
-         ((lambda)
-          (error "TODO")
-          )
-         ((letrec)
-          (error "TODO")
-          )
+         ((lookup) (cons (frame-addval next (env-ref env (cadr op))) rest-frames))
+         ((quote)  (cons (frame-addval next (cadr op)) rest-frames))
+         ((if)     (error "TODO"))
+         ((lambda) (cons (frame-addval next (make-closure op env)) rest-frames))
+         ((letrec) (error "TODO"))
          (else (error "invalid frame op" top)))))))
-
 
 (define (expr->frames expr env rest-frames)
   (cond
