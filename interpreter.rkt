@@ -190,6 +190,15 @@
                                               (quote #f)))))
                          (call has0? (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ())))))) env.empty)
                #t)
+  (test-equal? "eval of a letrec with 2 functions"
+               (eval '(letrec ((has0? (lambda (lst) 
+                                          (if (pair? lst)
+                                              (if (atom=? (car lst) (quote 0)) (call not (quote #t)) (call has0? (cdr lst)))
+                                              (call not (quote #f)))))
+                               (not   (lambda (x)
+                                          (if (atom=? x (quote #t)) (quote #f) (quote #t)))))
+                         (call has0? (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ())))))) env.empty)
+               #f)
 )
 
 
