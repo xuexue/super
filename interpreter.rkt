@@ -56,7 +56,7 @@
 
 (define env.empty '())
 (define (env-extend env k v) (cons (cons k v) env))
-
+(define (env-extend* env k* v*) (append (map2 cons k* v*) env))
 
 (define (lookup env key)
   (let ((kv (assq key env)))
@@ -113,11 +113,11 @@
            (body   (caddr expr)))
         (closure params body env))]
     [(atom=? (car expr) 'call)
-     (let ((fnexpr (cadr expr))
-           (argexpr (cddr expr)))
-        '())
-    [else
-     expr]))
+     (let ((proc (eval (cadr expr) env))
+           (arg* (map (lambda (rand) (eval rand env)) (cddr expr))))
+       (eval (closure-body proc)
+             (env-extend* (closure-env proc) (closure-param* proc) arg*)))]
+    [else (error "invalid expression" expr)]))
 
 
 (module+ test
@@ -155,7 +155,7 @@
                (eval '(call (call (lambda (x) (lambda (y) x)) (quote 1)) (quote 2)) env.empty)
                1)
   (test-equal? "eval passing in functions as args"
-               (eval '(call (lambda (f x) (f x)) (lambda (x) x) (quote 1)) env.empty)
+               (eval '(call (lambda (f x) (call f x)) (lambda (x) x) (quote 1)) env.empty)
                1)
 )
 
