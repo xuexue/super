@@ -39,6 +39,21 @@
            a*
            (member-atom a (cdr a*)))))
 
+(define (append x* y)
+  (if (null? x*)
+      y
+      (cons (car x*) (append (cdr x*) y))))
+
+(define (map f x*)
+  (if (null? x*)
+      '()
+      (cons (f (car x*)) (map f (cdr x*)))))
+
+(define (map2 f x* y*)
+  (if (null? x*)
+      '()
+      (cons (f (car x*) (car y*)) (map2 f (cdr x*) (cdr y*)))))
+
 (define env.empty '())
 (define (env-extend env k v) (cons (cons k v) env))
 
@@ -93,6 +108,7 @@
          (eval (caddr expr) env)
          (eval (cadddr expr) env))]
     [(atom=? (car expr) 'lambda)
+     (expr-arity=?! 2)
      (let ((params (cadr expr))
            (body   (caddr expr)))
         (closure params body env))]
