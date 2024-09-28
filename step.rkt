@@ -46,7 +46,13 @@
            (e1 (cadr expr))
            (e2 (caddr expr)))
        (expr->frames e1 env (cons (frame op '() (list e2) env) rest-frames)))]
+    [(member-atom (car expr) '(null? boolean? pair? number? symbol? procedure? car cdr))
+     (expr-arity=?! 1)
+     (let ((op (car expr))
+           (e  (cadr expr)))
+       (expr->frames e env (cons (frame op '() '() env) rest-frames)))]
 ))
+
 
 (define (toframes expr)
     (expr->frames expr env.empty (list frame.halt)))
@@ -73,6 +79,12 @@
                (toframes '(cons (quote 0) (quote 1)))
                (list (frame '(quote 0) '() '() env.empty)
                      (frame 'cons '() '((quote 1)) env.empty)
+                     frame.halt))
+  (test-equal? "create frame for a pair? call"
+               (toframes '(pair? (cons (quote 0) (quote 1))))
+               (list (frame '(quote 0) '() '() env.empty)
+                     (frame 'cons '() '((quote 1)) env.empty)
+                     (frame 'pair? '() '() env.empty)
                      frame.halt))
 )
 
