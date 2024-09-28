@@ -15,17 +15,48 @@
 
 ; takes stack of frames => returns stack of frames
 (define (step frames)
-  (if (and (symbol? (frame-op (car frames)))
-           (atom=? (frame-op (car frames)) 'halt))
-    frames ; return the frames
-    (let ((f    (car frames)) ; top frame
-          (next (cadr frames))) ; next frame
-      (cond
-        [(and (pair? (frame-op f)) (atom=? (car (frame-op f)) 'quote))
-         (cons (frame-addval next (cadr (frame-op f))) (cddr frames))]
-        [else
-          (error "todo")])
-      )))
+  (let* ((top         (car frames))
+         (op          (frame-op top))
+         (next        (and (pair? (cdr frames)) (cadr frames)))
+         (rest-frames (and next (cddr frames))))
+    (cond
+      ((symbol? op)
+       (case op
+         ((halt) frames)
+         ((call)
+          (error "TODO")
+          )
+         (else
+          (cond
+            ((assq op (map2 cons '(cons atom=?) (list cons atom=?)))
+             => (lambda (op-pair)
+                  (let ((proc (cdr op-pair)))
+                    (error "TODO"))))
+            ((assq op
+                   (map2 cons
+                         '(car cdr null? boolean? pair? number? symbol? procedure?)
+                         (list car cdr null? boolean? pair? number? symbol? closure?)))
+             => (lambda (op-pair)
+                  (let ((proc (cdr op-pair)))
+                    (error "TODO"))))
+            (else (error "invalid frame op" top))))))
+      ((not (pair? op)) (error "invalid frame op" top))
+      (else
+       (case (car op)
+         ((lookup)
+          (error "TODO")
+          )
+         ((quote) (cons (frame-addval next (cadr op)) rest-frames))
+         ((if)
+          (error "TODO")
+          )
+         ((lambda)
+          (error "TODO")
+          )
+         ((letrec)
+          (error "TODO")
+          )
+         (else (error "invalid frame op" top)))))))
 
 
 (define (expr->frames expr env rest-frames)
