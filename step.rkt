@@ -101,6 +101,22 @@
                      (frame 'pair? '() '() env.empty)
                      (frame 'if '() '((quote 0) (quote 1)) env.empty)
                      frame.halt))
+  (test-equal? "create frame for an if"
+               (toframes '(if (pair? (cons (quote 0) (quote 1))) (quote 0) (quote 1)))
+               (list (frame '(quote 0) '() '() env.empty)
+                     (frame 'cons '() '((quote 1)) env.empty)
+                     (frame 'pair? '() '() env.empty)
+                     (frame 'if '() '((quote 0) (quote 1)) env.empty)
+                     frame.halt))
+  (test-equal? "create frame for a lambda"
+               (toframes '(lambda (v) (quote 0)))
+               (list (frame '(lambda (v) (quote 0)) '() '() env.empty)
+                     frame.halt))
+  (test-equal? "create frame for a call"
+               (toframes '(call (lambda (v) (quote 0)) (quote 2)))
+               (list (frame '(lambda (v) (quote 0)) '() '() env.empty)
+                     (frame 'call '() '((quote 2)) env.empty)
+                     frame.halt))
 
 )
 
