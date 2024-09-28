@@ -165,14 +165,14 @@
                1)
 
   #;(test-equal? "eval of a weird letrec"
-               (eval '(letrec ((f (lambda (x) f))) (f (quote 1))) env.empty)
+               (eval '(letrec ((f (lambda (x) f))) (call f (quote 1))) env.empty)
                '())
   (test-equal? "eval of a not weird letrec"
                (eval '(letrec ((find-0 (lambda (lst) 
                                           (if (pair? lst)
-                                              (if (atom=? (car lst) 0) #t (find-0 cdr lst))
+                                              (if (atom=? (car lst) 0) #t (call find-0 cdr lst))
                                               #f))))
-                         (find-0 (cons (quote 1) (cons (quote 0) (cons (quote 1) ()))))) env.empty)
+                         (call find-0 (cons (quote 1) (cons (quote 0) (cons (quote 1) ()))))) env.empty)
                #t)
 )
 
