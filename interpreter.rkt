@@ -124,8 +124,7 @@
        (letrec ((env-new (env-extend env sym (eval lam env-new))))
           (eval (list 'letrec mapping-rest body) env-new))
     )]
-    [else
-     expr]))
+    [else (error "invalid expression" expr)]))
 
 (module+ test
   (test-equal? "eval empty atom"
