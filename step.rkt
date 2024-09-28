@@ -18,6 +18,8 @@
   (let* ((top         (car frames))
          (op          (frame-op top))
          (env         (frame-env top))
+         (vals        (frame-vals top))
+         (exprs       (frame-exprs top))
          (next        (and (pair? (cdr frames)) (cadr frames)))
          (rest-frames (and next (cddr frames))))
     (cond
@@ -46,7 +48,9 @@
        (case (car op)
          ((lookup) (cons (frame-addval next (env-ref env (cadr op))) rest-frames))
          ((quote)  (cons (frame-addval next (cadr op)) rest-frames))
-         ((if)     (error "TODO"))
+         ((if)     (if (car vals)
+                       (expr->frames (cadr op) env (cdr frames))
+                       (expr->frames (caddr op) env (cdr frames))))
          ((lambda) (cons (frame-addval next (make-closure op env)) rest-frames))
          ((letrec) (error "TODO"))
          (else (error "invalid frame op" top)))))))
@@ -104,9 +108,6 @@
                (toframes '(quote 0))
                (list (frame '(quote 0) '() '() env.empty)
                      frame.halt))
-  (test-equal? "evaluate a quote"
-               (eval '(quote 0) env.empty)
-               0)
   (test-equal? "create frame for a cons"
                (toframes '(cons (quote 0) (quote 1)))
                (list (frame '(quote 0) '() '() env.empty)
@@ -134,6 +135,14 @@
                (list (frame '(lambda (v) (quote 0)) '() '() env.empty)
                      (frame 'call '() '((quote 2)) env.empty)
                      frame.halt))
+
+  (test-equal? "evaluate a quote"
+               (eval '(quote 0) env.empty)
+               0)
+  (test-equal? "evaluate an if"
+               (eval '(if (quote #f) (quote 0) (quote 1)) env.empty)
+               1)
+
 )
 
 
