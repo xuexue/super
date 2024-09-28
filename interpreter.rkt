@@ -107,7 +107,7 @@
                   [(atom=? op 'pair?)      (pair? v)]
                   [(atom=? op 'number?)    (number? v)]
                   [(atom=? op 'symbol?)    (symbol? v)]
-                  [(atom=? op 'procedure?) (procedure? v)]
+                  [(atom=? op 'procedure?) (closure? v)]
                   )
             (error "to many arguments argument in" op)))]
     [(atom=? (car expr) 'if)
