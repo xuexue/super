@@ -17,7 +17,7 @@
 (define (step frames)
   (if (and (symbol? (frame-op (car frames)))
            (atom=? (frame-op (car frames)) 'halt))
-    frames ; return the frames 
+    frames ; return the frames
     (let ((f    (car frames)) ; top frame
           (next (cadr frames))) ; next frame
       (cond
@@ -29,37 +29,33 @@
 
 
 (define (expr->frames expr env rest-frames)
-  (define (expr-arity=?! n)
-    (let ((arity (length (cdr expr))))
-      (unless (atom=? arity n)
-        (error "invalid expression arity" expr 'expected n 'actual arity))))
   (cond
     [(symbol? expr)     (error "TODO")]
     [(not (pair? expr)) (error "invalid expression")]
-    [(and (atom=? (car expr) 'quote) (expr-arity=?! 1) (atom? (cadr expr)))
-     (if (atom=? (cddr expr) '())
-         (cons (frame expr '() '() env) rest-frames)
-         (error "invalid quote" expr))]
-    [(member-atom (car expr) '(cons atom=?))
-     (expr-arity=?! 2)
-     (let ((op (car expr))
-           (e1 (cadr expr))
-           (e2 (caddr expr)))
-       (expr->frames e1 env (cons (frame op '() (list e2) env) rest-frames)))]
-    [(member-atom (car expr) '(null? boolean? pair? number? symbol? procedure? car cdr))
-     (expr-arity=?! 1)
-     (let ((op (car expr))
-           (e  (cadr expr)))
-       (expr->frames e env (cons (frame op '() '() env) rest-frames)))]
-    [(atom=? (car expr) 'if)
-     (expr-arity=?! 3)
-     (let ((c (cadr expr))
-           (t (caddr expr))
-           (e (cadddr expr)))
-       (expr->frames c env (cons (frame 'if '() (list t e) env) rest-frames)))]
-    [(lambda? expr)
-     (cons (frame expr '() '() env) rest-frames)]
-))
+    [else
+     (case (car expr)
+       ((quote) (cons (frame expr '() '() env) rest-frames))
+       ((if) (let ((c (cadr expr))
+                   (t (caddr expr))
+                   (e (cadddr expr)))
+               (expr->frames c env (cons (frame (list 'if t e) '() '() env) rest-frames))))
+       ((call) (error "TODO"))
+       ((lambda) (cons (frame expr '() '() env) rest-frames))
+       ((letrec) (error "TODO"))
+       (else (cond
+               ((member-atom (car expr) '(cons atom=?))
+                => (lambda (op*)
+                     (let ((op (car op*))
+                           (e1 (cadr expr))
+                           (e2 (caddr expr)))
+                       (expr->frames e1 env (cons (frame op '() (list e2) env) rest-frames)))))
+               ((member-atom (car expr)
+                             '(null? boolean? pair? number? symbol? procedure? car cdr))
+                => (lambda (op*)
+                     (let ((op (car op*))
+                           (e  (cadr expr)))
+                       (expr->frames e env (cons (frame op '() '() env) rest-frames)))))
+               (else (error "invalid expression" expr)))))]))
 
 
 (define (toframes expr)
@@ -93,13 +89,6 @@
                (list (frame '(quote 0) '() '() env.empty)
                      (frame 'cons '() '((quote 1)) env.empty)
                      (frame 'pair? '() '() env.empty)
-                     frame.halt))
-  (test-equal? "create frame for an if"
-               (toframes '(if (pair? (cons (quote 0) (quote 1))) (quote 0) (quote 1)))
-               (list (frame '(quote 0) '() '() env.empty)
-                     (frame 'cons '() '((quote 1)) env.empty)
-                     (frame 'pair? '() '() env.empty)
-                     (frame 'if '() '((quote 0) (quote 1)) env.empty)
                      frame.halt))
   (test-equal? "create frame for an if"
                (toframes '(if (pair? (cons (quote 0) (quote 1))) (quote 0) (quote 1)))
