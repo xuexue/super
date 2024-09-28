@@ -51,6 +51,12 @@
      (let ((op (car expr))
            (e  (cadr expr)))
        (expr->frames e env (cons (frame op '() '() env) rest-frames)))]
+    [(atom=? (car expr) 'if)
+     (expr-arity=?! 3)
+     (let ((c (cadr expr))
+           (t (caddr expr))
+           (e (cadddr expr)))
+       (expr->frames c env (cons (frame 'if '() (list t e) env) rest-frames)))]
 ))
 
 
@@ -86,6 +92,14 @@
                      (frame 'cons '() '((quote 1)) env.empty)
                      (frame 'pair? '() '() env.empty)
                      frame.halt))
+  (test-equal? "create frame for an if"
+               (toframes '(if (pair? (cons (quote 0) (quote 1))) (quote 0) (quote 1)))
+               (list (frame '(quote 0) '() '() env.empty)
+                     (frame 'cons '() '((quote 1)) env.empty)
+                     (frame 'pair? '() '() env.empty)
+                     (frame 'if '() '((quote 0) (quote 1)) env.empty)
+                     frame.halt))
+
 )
 
 
