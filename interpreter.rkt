@@ -117,8 +117,19 @@
            (arg* (map (lambda (rand) (eval rand env)) (cddr expr))))
        (eval (closure-body proc)
              (env-extend* (closure-env proc) (closure-param* proc) arg*)))]
-    [else (error "invalid expression" expr)]))
-
+    [(and (atom=? (car expr) 'letrec) (atom=? (cadr expr) '())) ; base case for letrec
+     (eval (caddr expr) env)] ; todo check arity
+    [(atom=? (car expr) 'letrec)
+     (let ((mapping-rest (cddr expr)) ; todo: arity check on expr
+           (sym          (car (car expr)))
+           (lam          (cadr (car expr))) ; todo: arity check on (car expr)
+           (body         (caddr expr)))
+       ; todo: check lam is actually a lambda
+       (letrec ((env-new (env-extend env sym (eval lam env-new))))
+          (eval (list 'letrec mapping-rest body) env-new))
+    )]
+    [else
+     expr]))
 
 (module+ test
   (test-equal? "eval empty atom"
@@ -157,6 +168,11 @@
   (test-equal? "eval passing in functions as args"
                (eval '(call (lambda (f x) (call f x)) (lambda (x) x) (quote 1)) env.empty)
                1)
+
+  #;(test-equal? "eval of a weird letrec"
+               (eval '(letrec (f (lambda (x) f)) (f (quote 1))) env.empty)
+               '())
+
 )
 
 
