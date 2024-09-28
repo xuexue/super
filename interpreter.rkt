@@ -150,6 +150,12 @@
   (test-equal? "eval numl? quote 0"
                (eval '(number? (quote 0)) env.empty)
                #t)
+  (test-equal? "eval check that 0 is not a procedure"
+               (eval '(procedure? (quote 0)) env.empty)
+               #f)
+  (test-equal? "eval check that a lambda evaluates to a procedure"
+               (eval '(procedure? (lambda () (quote 0))) env.empty)
+               #t)
   (test-equal? "eval comparison of numbers"
                (eval '(atom=? (quote 0) (quote 1)) env.empty)
                #f)
