@@ -54,6 +54,13 @@
       '()
       (cons (f (car x*) (car y*)) (map2 f (cdr x*) (cdr y*)))))
 
+(struct closure (param* body env) #:prefab)
+(define (make-closure lam env) (closure (cadr lam) (caddr lam) env))
+(define (param*? x) (and (list? x) (andmap symbol? x)))
+(define (lambda? expr)
+  (and (list? expr) (= (length expr) 3) (atom=? (car expr) 'lambda)
+       (param*? (cadr expr))))
+
 (define env.empty '())
 (define (env-extend*     env k* v*)   (list 'call   (map2 cons k* v*)   env))
 (define (env-extend*/rec env k* lam*) (list 'letrec (map2 cons k* lam*) env))
@@ -64,10 +71,8 @@
     ((call)   (let ((kv (assq key (cadr env))))
                 (if kv (cdr kv) (env-ref (caddr env) key))))
     ((letrec) (let ((kl (assq key (cadr env))))
-                (if kl (eval (cdr kl) env) (env-ref (caddr env) key))))
+                (if kl (make-closure (cdr kl) env) (env-ref (caddr env) key))))
     (else     (error "invalid environment tag" env))))
-
-(struct closure (param* body env) #:prefab)
 
 (define (eval expr env)
   (define (expr-arity=?! n)
@@ -110,11 +115,7 @@
      (if (eval (cadr expr) env)
          (eval (caddr expr) env)
          (eval (cadddr expr) env))]
-    [(atom=? (car expr) 'lambda)
-     (expr-arity=?! 2)
-     (let ((params (cadr expr))
-           (body   (caddr expr)))
-        (closure params body env))]
+    [(lambda? expr) (make-closure expr env)]
     [(atom=? (car expr) 'call)
      (let ((proc (eval (cadr expr) env))
            (arg* (map (lambda (rand) (eval rand env)) (cddr expr))))
