@@ -65,7 +65,6 @@
     [(not (pair? expr)) (error "invalid expression")]
     [else
      (case (car expr)
-       ((quote) (cons (frame expr '() '() env) rest-frames))
        ((if) (let ((c (cadr expr))
                    (t (caddr expr))
                    (e (cadddr expr)))
@@ -73,8 +72,7 @@
        ((call) (let ((proc  (cadr expr))
                      (rand* (cddr expr)))
                  (expr->frames proc env (cons (frame 'call '() rand* env) rest-frames))))
-       ((lambda) (cons (frame expr '() '() env) rest-frames))
-       ((letrec) (cons (frame expr '() '() env) rest-frames))
+       ((quote lambda letrec) (cons (frame expr '() '() env) rest-frames))
        (else (cond
                ((member-atom (car expr) '(cons atom=?))
                 => (lambda (op*)
