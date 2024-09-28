@@ -30,7 +30,7 @@
 
 (define (expr->frames expr env rest-frames)
   (cond
-    [(symbol? expr)     (error "TODO")]
+    [(symbol? expr)     (cons (frame (list 'lookup expr) '() '() env) rest-frames)]
     [(not (pair? expr)) (error "invalid expression")]
     [else
      (case (car expr)
@@ -74,6 +74,11 @@
 
 
 (module+ test
+  (test-equal? "create frame for a variable lookup"
+               (toframes 'v)
+               (list (frame '(lookup v) '() '() env.empty)
+                     frame.halt))
+
   (test-equal? "create frame for a quote"
                (toframes '(quote 0))
                (list (frame '(quote 0) '() '() env.empty)
@@ -108,7 +113,6 @@
                (list (frame '(lambda (v) (quote 0)) '() '() env.empty)
                      (frame 'call '() '((quote 2)) env.empty)
                      frame.halt))
-
 )
 
 
