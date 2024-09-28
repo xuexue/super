@@ -39,7 +39,9 @@
                    (t (caddr expr))
                    (e (cadddr expr)))
                (expr->frames c env (cons (frame (list 'if t e) '() '() env) rest-frames))))
-       ((call) (error "TODO"))
+       ((call) (let ((proc  (cadr expr))
+                     (rand* (cddr expr)))
+                 (expr->frames proc env (cons (frame 'call '() rand* env) rest-frames))))
        ((lambda) (cons (frame expr '() '() env) rest-frames))
        ((letrec) (error "TODO"))
        (else (cond
