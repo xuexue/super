@@ -55,10 +55,17 @@
       (cons (f (car x*) (car y*)) (map2 f (cdr x*) (cdr y*)))))
 
 (define env.empty '())
-(define (env-extend env k v) (cons (cons k v) env))
-(define (env-extend* env k* v*) (append (map2 cons k* v*) env))
-(define (env-ref env key) (let ((kv (assq key env)))
-                            (if kv (cdr kv) (error "unbound variable" key))))
+(define (env-extend*     env k* v*)   (list 'call   (map2 cons k* v*)   env))
+(define (env-extend*/rec env k* lam*) (list 'letrec (map2 cons k* lam*) env))
+
+(define (env-ref env key)
+  (when (null? env) (error "unbound variable" key))
+  (case (car env)
+    ((call)   (let ((kv (assq key (cadr env))))
+                (if kv (cdr kv) (env-ref (caddr env) key))))
+    ((letrec) (let ((kl (assq key (cadr env))))
+                (if kl (eval (cdr kl) env) (env-ref (caddr env) key))))
+    (else     (error "invalid environment tag" env))))
 
 (struct closure (param* body env) #:prefab)
 
@@ -121,9 +128,9 @@
            (lam          (cadr (car expr))) ; todo: arity check on (car expr)
            (body         (caddr expr)))
        ; todo: check lam is actually a lambda
-       (letrec ((env-new (env-extend env sym (eval lam env-new))))
-          (eval (list 'letrec mapping-rest body) env-new))
-    )]
+       (letrec ((env-new (env-extend* env (list sym (eval lam env-new)))))
+         (eval (list 'letrec mapping-rest body) env-new))
+       )]
     [else (error "invalid expression" expr)]))
 
 (module+ test
