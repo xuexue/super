@@ -57,10 +57,8 @@
 (define env.empty '())
 (define (env-extend env k v) (cons (cons k v) env))
 (define (env-extend* env k* v*) (append (map2 cons k* v*) env))
-
-(define (lookup env key)
-  (let ((kv (assq key env)))
-    (if kv (cdr kv) (error "unbound variable" key))))
+(define (env-ref env key) (let ((kv (assq key env)))
+                            (if kv (cdr kv) (error "unbound variable" key))))
 
 (struct closure (param* body env) #:prefab)
 
@@ -70,10 +68,8 @@
       (unless (atom=? arity n)
         (error "invalid expression arity" expr 'expected n 'actual arity))))
   (cond
-    [(symbol? expr)
-     (lookup env expr)]
-    [(not (pair? expr))
-     (error "invalid expression")]
+    [(symbol? expr) (env-ref env expr)]
+    [(not (pair? expr)) (error "invalid expression")]
     [(and (atom=? (car expr) 'quote) (expr-arity=?! 1) (atom? (cadr expr)))
      (if (atom=? (cddr expr) '())
          (cadr expr)
