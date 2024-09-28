@@ -14,7 +14,9 @@
     ((not (pair? expr)) (error "invalid expression" expr))
     (else
      (case (car expr)
-       ((quote) (expr-arity=?! 1) (cadr expr))
+       ((quote) (expr-arity=?! 1)
+                (unless (atom? (cadr expr)) (error "not a quoted atom" expr))
+                (cadr expr))
        ((if) (expr-arity=?! 3) (if (eval (cadr expr) env)
                                    (eval (caddr expr) env)
                                    (eval (cadddr expr) env)))
