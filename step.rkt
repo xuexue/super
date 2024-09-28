@@ -106,7 +106,7 @@
                (list (frame '(quote 0) '() '() env.empty)
                      (frame 'cons '() '((quote 1)) env.empty)
                      (frame 'pair? '() '() env.empty)
-                     (frame 'if '() '((quote 0) (quote 1)) env.empty)
+                     (frame '(if (quote 0) (quote 1)) '() '() env.empty)
                      frame.halt))
   (test-equal? "create frame for a lambda"
                (toframes '(lambda (v) (quote 0)))
