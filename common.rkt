@@ -107,13 +107,18 @@
 (struct frame (op vals exprs env) #:prefab)
 (define frame.halt
   (frame 'halt '() '() env.empty))
+(define frame.error
+  (frame 'error '() '() env.empty))
+(define (frames-error frames)
+  (cons frame.error frames))
+
 
 ; logic variable
 (struct lvar (name) #:prefab)
 
 ; constraints
 (define constraint.empty '())
-(define constraint-add   cons)
+(define (cx:and c1 c2) (list 'and c1 c2))
 
 (define (state frame* constraint) (list frame* constraint))
 (define (state-frame*     st) (car  st))

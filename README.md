@@ -117,7 +117,7 @@ TYPE ::= null | num | pair | symbol | boolean | procedure | vector
 
 ;; constraint
 C  ::= (= V V)
-     | (has-type V TYPE)
+     | (has-type TYPE V)
      | (not C)
      | (and C ...)
      | (or  C ...)

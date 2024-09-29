@@ -5,13 +5,17 @@
 (module+ test
   (require rackunit))
 
+(define (new-var)
+  (lvar 'x))
+
 (define (drive st)
-  (let* ((frames     (state-frame* st))
-         (constraint (state-constraint st))
-         (top        (car frames))
-         (op         (frame-op top))
-         (vals       (frame-vals top))
-         (env        (frame-env top)))
+  (let* ((frames (state-frame* st))
+         (cx     (state-constraint st))
+         (top    (car frames))
+         (rest   (cdr frames))
+         (op     (frame-op top))
+         (vals   (frame-vals top))
+         (env    (frame-env top)))
     (cond
       ((symbol? op)
        (case op
@@ -21,10 +25,20 @@
           (cond
             ((assq op (map2 cons '(cons = symbol=? + vector-ref) (list cons = symbol=? + vector-ref)))
              => (lambda (name&proc) (error "todo")))
-            ((assq op
-                   (map2 cons '(car cdr)
-                         (list car cdr)))
-             => (lambda (name&proc) (error "todo")))
+            ((assq op (map2 cons '(car cdr) (list car cdr)))
+             => (lambda (name&proc)
+                  (let ((val  (car vals))
+                        (proc (cdr name&proc)))
+                    (cond [(lvar? val)
+                           (list
+                             (let* ((lv1 (new-var)) ; names of the fresh logic variable
+                                    (lv2 (new-var))
+                                    (c^  (cx:and cx (list '= (cons lv1 lv2) val))))
+                                (state (frames-pushval rest lv1) c^))
+                             (let* ((c^  (cx:and cx (list 'not (list 'has-type 'pair val)))))
+                                (state (frames-error frames) c^)))]
+                          [(pair? val) (list (state (frames-pushval rest (proc val)) cx))]
+                          [else        (list (state (frames-error frames) cx))]))))
             ((assq op
                    (map2 cons
                          '(null? boolean? pair? number? symbol? procedure? vector vector?)
@@ -49,4 +63,4 @@
   (test-equal?
     "drive a car"
     (drive (state car-frames constraint.empty))
-    (list (step car-frames))))
+    (list (state (step car-frames) constraint.empty))))

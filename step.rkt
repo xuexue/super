@@ -1,5 +1,5 @@
 #lang racket/base
-(provide step)
+(provide step frames-pushval expr->frames)
 (require "common.rkt" racket/bool)
 
 (module+ test
