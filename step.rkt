@@ -51,9 +51,8 @@
                    (map2 cons
                          '(car cdr null? boolean? pair? number? symbol? procedure?)
                          (list car cdr null? boolean? pair? number? symbol? closure?)))
-             => (lambda (op-pair)
-                  (let ((proc (cdr op-pair)))
-                    (error "TODO"))))
+             => (lambda (name&proc)
+                  (frames-pushval (cdr frames) ((cdr name&proc) (car vals)))))
             (else (error "invalid frame op" top))))))
       ((not (pair? op)) (error "invalid frame op" top))
       (else
