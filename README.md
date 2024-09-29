@@ -90,12 +90,42 @@ OP ::=
      ;; recursive procedure binding
      | (letrec ((<symbol> LAM) ...) E)
 
-;; State: (with added invariant below)
-S :: = (F F ...)
+;; Stack : (with added invariant below)
+STACK :: = (F F ...)
 ```
 
-A state follows the invariant that the top most frame can always
+A stack follows the invariant that the top most frame can always
 immediately return a value, without having to generate new frames first---
 that is, it has no subexpressions remaining to be evaluated.
-A state also has the `halt` frame  in the outer most context, i.e. at the bottom.
+A stack also has the `halt` frame  in the outer most context, i.e. at the bottom.
+
+
+The file `drive.rkt` contains a driver. The driver takes a *state* (defined below),
+a list of *logic variables* (unbound/open variables in the expression being evaluated),
+and takes an expansion step to produce a list of potential next *states*.
+Unlike `step`, the function `drive` can produce multiple states.
+
+```
+;; Value: redefinition of a value to also include a *logic variable*
+V  ::= A | #(V) | (V . V) | #s(closure (<symbol> ...) E ENV) | LV
+
+;; Logic Variable
+LV    ::= #s(lvar <symbol>)
+
+;; Types
+TYPE ::= null | num | pair | symbol | boolean | procedure | vector
+
+;; constraints
+C  ::= (= V V)
+     | (has-type V TYPE)
+     | (not C)
+     | (and C ...)
+     | (or  C ...)
+
+;; State
+STATE = (STACK, C)
+```
+
+Essentially, `drive` will take a logic variable environment (mapping of symbols to `LV`),
+and a `STATE`, and produce a list of `STATE`s.
 
