@@ -28,7 +28,8 @@ E ::=
     | (cdr E)
     | (vector-ref E E)
     ;; predicates
-    | (atom=? E E)
+    | (= E E)
+    | (symbol=? E E)
     | (null? E)
     | (boolean? E)
     | (vector? E)
@@ -73,7 +74,8 @@ OP ::=
      | cdr
      | vector-ref
      ;; predicates
-     | atom=?
+     | =
+     | symbol=?
      | null?
      | boolean?
      | pair?

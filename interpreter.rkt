@@ -2,12 +2,13 @@
 (provide eval)
 (module+ test
   (require rackunit))
+(require racket/bool)
 (require "common.rkt")
 
 (define (eval expr env)
   (define (expr-arity=?! n)
     (let ((arity (length (cdr expr))))
-      (unless (atom=? arity n)
+      (unless (= arity n)
         (error "invalid expression arity" expr 'expected n 'actual arity))))
   (cond
     ((symbol? expr) (env-ref env expr))
@@ -39,7 +40,7 @@
                      (unless (andmap lambda? lam*) (error "invalid lambdas" lam*))
                      (eval body (env-extend*/rec env x* lam*)))))
        (else (cond
-               ((assq (car expr) (map2 cons '(cons atom=? + vector-ref) (list cons atom=? + vector-ref)))
+               ((assq (car expr) (map2 cons '(cons = symbol=? + vector-ref) (list cons = symbol=? + vector-ref)))
                 => (lambda (op-pair)
                      (expr-arity=?! 2)
                      ((cdr op-pair) (eval (cadr expr) env) (eval (caddr expr) env))))
@@ -75,7 +76,7 @@
                (eval '(procedure? (lambda () (quote 0))) env.empty)
                #t)
   (test-equal? "eval comparison of numbers"
-               (eval '(atom=? (quote 0) (quote 1)) env.empty)
+               (eval '(= (quote 0) (quote 1)) env.empty)
                #f)
   (test-equal? "eval if expression"
                (eval '(if (quote #t) (quote 0) (quote 1)) env.empty)
@@ -114,7 +115,7 @@
   (test-equal? "eval of a not weird letrec"
                (eval '(letrec ((has0? (lambda (lst)
                                         (if (pair? lst)
-                                            (if (atom=? (car lst) (quote 0)) (quote #t) (call has0? (cdr lst)))
+                                            (if (= (car lst) (quote 0)) (quote #t) (call has0? (cdr lst)))
                                             (quote #f)))))
                         (call has0? (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ())))))) env.empty)
                #t)
@@ -129,10 +130,10 @@
   (test-equal? "eval of a letrec with 2 functions"
                (eval '(letrec ((has0? (lambda (lst)
                                         (if (pair? lst)
-                                            (if (atom=? (car lst) (quote 0)) (call not (quote #t)) (call has0? (cdr lst)))
+                                            (if (= (car lst) (quote 0)) (call not (quote #t)) (call has0? (cdr lst)))
                                             (call not (quote #f)))))
                                (not   (lambda (x)
-                                        (if (atom=? x (quote #t)) (quote #f) (quote #t)))))
+                                        (if x (quote #f) (quote #t)))))
                         (call has0? (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ())))))) env.empty)
                #f)
   )
