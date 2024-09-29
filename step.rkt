@@ -60,7 +60,7 @@
          ((lambda) (frames-pushval (cdr frames) (make-closure op env)))
          ((letrec) (let ((bpair* (cadr op)))
                      (expr->frames (caddr op)
-                                   (env-extend*/rec env (map car bpair*) (map cdr bpair*))
+                                   (env-extend*/rec env (map car bpair*) (map cadr bpair*))
                                    (cdr frames))))
          (else (error "invalid frame op" top)))))))
 
@@ -205,6 +205,27 @@
   (test-equal? "eval passing in functions as args"
                (eval '(call (lambda (f x) (call f x)) (lambda (x) x) (quote 1)) env.empty)
                1)
+
+  ;(test-equal? "eval of a weird letrec"
+  ;             (eval '(letrec ((f (lambda (x) f))) (call f (quote 1))) env.empty)
+  ;             '())
+  (test-equal? "eval of a not weird letrec"
+               (eval '(letrec ((has0? (lambda (lst)
+                                        (if (pair? lst)
+                                            (if (atom=? (car lst) (quote 0)) (quote #t) (call has0? (cdr lst)))
+                                            (quote #f)))))
+                        (call has0? (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ())))))) env.empty)
+               #t)
+  (test-equal? "eval of a letrec with 2 functions"
+               (eval '(letrec ((has0? (lambda (lst)
+                                        (if (pair? lst)
+                                            (if (atom=? (car lst) (quote 0)) (call not (quote #t)) (call has0? (cdr lst)))
+                                            (call not (quote #f)))))
+                               (not   (lambda (x)
+                                        (if (atom=? x (quote #t)) (quote #f) (quote #t)))))
+                        (call has0? (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ())))))) env.empty)
+               #f)
+
 )
 
 
