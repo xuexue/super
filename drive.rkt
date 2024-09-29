@@ -20,6 +20,14 @@
                          (on-error (cx:and cx (list 'not (list 'has-type 'pair x))))))
       (else      (on-error cx)))))
 
+(define (with-ifcond x cx on-true on-false)
+  (let ((x (walk x cx)))
+    (cond
+      ((lvar? x) (append (on-true (cx:and cx (list 'not (list '= x #f))))
+                         (on-false (cx:and cx (list '= x #f)))))
+      (x         (on-true  cx))
+      (else      (on-false cx)))))
+
 (define (drive st)
   (let* ((frames (state-frame* st))
          (cx     (state-constraint st))
@@ -67,7 +75,11 @@
        (case (car op)
          ((lookup) (error "todo"))
          ((quote)  (error "todo"))
-         ((if)     (error "todo"))
+         ((if) (with-ifcond
+                 (car vals)
+                 cx
+                 (lambda (cx) (list (state (expr->frames (op:if-t op) env rest) cx)))
+                 (lambda (cx) (list (state (expr->frames (op:if-f op) env rest) cx)))))
          ((lambda) (error "todo"))
          ((letrec) (error "todo"))
          (else (error "invalid frame op" top)))))))
