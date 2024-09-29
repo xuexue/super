@@ -2,9 +2,14 @@
 (provide (all-defined-out))
 (require racket/bool)
 
-(define (atom?  x)   (or (null? x) (boolean? x) (number? x) (symbol? x)))
-(define (atom?! x)   (unless (atom? x) (error "not an atom" x)))
-(define (atom=? a b) (atom?! a) (atom?! b) (eqv? a b))
+(define (atom? x) (or (null? x) (boolean? x) (number? x) (symbol? x)))
+(define (atom=? a b)
+  (cond ((null?    a) (null? b))
+        ((boolean? a) (and (boolean? b) (if a b (not b))))
+        ((number?  a) (and (number? b) (= a b)))
+        ((symbol?  b) (and (symbol? b) (symbol=? a b)))
+        (else         #f)))
+
 (define (not x) (if x #f #t))
 (define (caar  x) (car (car x)))
 (define (cadr  x) (car (cdr x)))
@@ -32,11 +37,11 @@
       0
       (+ (length (cdr x*)) 1)))
 
-(define (member-atom a a*)
+(define (member a a*)
   (and (pair? a*)
-       (if (atom=? (car a*) a)
+       (if (equal? (car a*) a)
            a*
-           (member-atom a (cdr a*)))))
+           (member a (cdr a*)))))
 
 (define (append x* y)
   (if (null? x*)
