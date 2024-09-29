@@ -17,8 +17,18 @@
       ((pair? x) (on-pair x cx))
       ((lvar? x) (append (let ((p (cons (new-var) (new-var))))
                            (on-pair p (cx:and cx (list '= p x))))
-                         (on-error (cx:and cx (list 'not (list 'has-type 'pair x))))))
+                         (on-error (cx:and cx (list 'not (list 'has-type 'pair? x))))))
       (else      (on-error cx)))))
+
+;; This assumes all vectors contain a single element.
+(define (with-vector x cx on-vector on-error)
+  (let ((x (walk x cx)))
+    (cond
+      ((vector? x) (on-vector x cx))
+      ((lvar?   x) (append (let ((v (vector (new-var))))
+                             (on-vector v (cx:and cx (list '= x v))))
+                           (on-error (cx:and cx (list 'not (list 'has-type 'vector? x))))))
+      (else        (on-error cx)))))
 
 (define (with-ifcond x cx on-true on-false)
   (let ((x (walk x cx)))
@@ -64,8 +74,16 @@
                          (else (list (state (frames-error frames) cx))))))
          (else
           (cond
-            ((assq op (map2 cons '(cons = symbol=? + vector-ref) (list cons = symbol=? + vector-ref)))
-             => (lambda (name&proc) (error "todo")))
+            ((equal? op 'cons)
+             (list (state (frames-pushval rest (cons (walk (cadr vals) cx) (walk (car vals) cx))) cx)))
+            ((equal? op 'vector-ref)
+             (with-vector (car vals) cx
+                          (lambda (vec cx) (list (state (frames-pushval rest (vector-ref vec)) cx)))
+                          (lambda (cx)     (list (state (frames-error frames) cx)))))
+            ((assq op (map2 cons '(= symbol=? +) (list = symbol=? +)))
+             => (lambda (name&proc)
+                  (error "todo")
+                  ))
             ((assq op (map2 cons '(car cdr) (list car cdr)))
              => (lambda (name&proc)
                   (let ((val  (car vals))
