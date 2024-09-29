@@ -103,3 +103,8 @@
 (define (op:lookup-v op) (cadr op))
 (define (op:if-t op)     (cadr op))
 (define (op:if-f op)     (caddr op))
+
+(struct frame (op vals exprs env) #:prefab)
+(define frame.halt
+  (frame 'halt '() '() env.empty))
+

@@ -5,9 +5,6 @@
 (module+ test
   (require rackunit))
 
-(struct frame (op vals exprs env) #:prefab)
-(define frame.halt
-  (frame 'halt '() '() env.empty))
 (define (frames-pushval frames val)
   (let* ((f     (car frames))
          (op    (frame-op f))
