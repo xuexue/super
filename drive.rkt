@@ -80,8 +80,12 @@
                  cx
                  (lambda (cx) (list (state (expr->frames (op:if-t op) env rest) cx)))
                  (lambda (cx) (list (state (expr->frames (op:if-f op) env rest) cx)))))
-         ((lambda) (error "todo"))
-         ((letrec) (error "todo"))
+         ((lambda) (list (state (frames-pushval rest (make-closure op env)) cx)))
+         ((letrec) (let ((bpair* (letrec-binding* op)))
+                     (list (state (expr->frames (letrec-body op)
+                                                (env-extend*/rec env (map binding-lhs bpair*) (map binding-rhs bpair*))
+                                                rest)
+                                  cx))))
          (else (error "invalid frame op" top)))))))
 
 
