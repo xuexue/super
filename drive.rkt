@@ -57,10 +57,14 @@
 
 
 (module+ test
-  (define car-frames
-          (list (frame 'car '((1 . 0)) '() env.empty)
-                 frame.halt))
+  (define car-frames (list (frame 'car '((1 . 0)) '() env.empty) frame.halt))
+  (define cdr-frames (list (frame 'cdr '((1 . 0)) '() env.empty) frame.halt))
   (test-equal?
     "drive a car"
     (drive (state car-frames constraint.empty))
-    (list (state (step car-frames) constraint.empty))))
+    (list (state (step car-frames) constraint.empty)))
+  (test-equal?
+    "drive a cdr"
+    (drive (state cdr-frames constraint.empty))
+    (list (state (step cdr-frames) constraint.empty)))
+)
