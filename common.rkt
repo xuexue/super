@@ -59,11 +59,7 @@
       (cons (f (car x*) (car y*)) (map2 f (cdr x*) (cdr y*)))))
 
 (struct closure (param* body env) #:prefab)
-(define (make-closure lam env) (closure (cadr lam) (caddr lam) env))
-(define (param*? x) (and (list? x) (andmap symbol? x)))
-(define (lambda? expr)
-  (and (list? expr) (= (length expr) 3) (atom=? (car expr) 'lambda)
-       (param*? (cadr expr))))
+(define (make-closure lam env) (closure (lambda-param* lam) (lambda-body lam) env))
 
 (define env.empty '())
 (define (env-extend*     env k* v*)   (list 'call   (map2 cons k* v*)   env))
@@ -77,3 +73,29 @@
     ((letrec) (let ((kl (assq key (cadr env))))
                 (if kl (make-closure (cdr kl) env) (env-ref (caddr env) key))))
     (else     (error "invalid environment tag" env))))
+
+(define (quote-a E) (cadr E))
+
+(define (if-c E) (cadr   E))
+(define (if-t E) (caddr  E))
+(define (if-f E) (cadddr E))
+
+(define (call-rator E) (cadr E))
+(define (call-rand* E) (cddr E))
+
+(define (param*? x) (and (list? x) (andmap symbol? x)))
+(define (lambda? x)
+  (and (list? x) (= (length x) 3) (atom=? (car x) 'lambda)
+       (param*? (cadr x))))
+(define (lambda-param* E) (cadr  E))
+(define (lambda-body   E) (caddr E))
+
+(define (binding? x) (and (pair? x) (symbol? (car x)) (pair? (cdr x)) (null? (cddr x))))
+(define (binding*? x*) (andmap binding*? x*))
+(define (binding-lhs b) (car  b))
+(define (binding-rhs b) (cadr b))
+(define (letrec-binding* E) (cadr E))
+(define (letrec-body     E) (caddr E))
+
+(define (primop-rand1 E) (cadr E))
+(define (primop-rand2 E) (caddr E))
