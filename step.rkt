@@ -10,17 +10,17 @@
 (define frame.halt
   (frame 'halt '() '() env.empty))
 (define (frames-pushval frames val)
-  (let ((f     (car frames)))
-    (let ((op    (frame-op f))
-          (vals  (frame-vals f))
-          (exprs (frame-exprs f))
-          (env   (frame-env f)))
-      (if (null? exprs)
-          (cons (frame op (cons val vals) exprs env) (cdr frames))
-          (expr->frames (car exprs)
-                        env
-                        (cons (frame op (cons val vals) (cdr exprs) env)
-                              (cdr frames)))))))
+  (let* ((f     (car frames))
+         (op    (frame-op f))
+         (vals  (frame-vals f))
+         (exprs (frame-exprs f))
+         (env   (frame-env f)))
+    (if (null? exprs)
+        (cons (frame op (cons val vals) exprs env) (cdr frames))
+        (expr->frames (car exprs)
+                      env
+                      (cons (frame op (cons val vals) (cdr exprs) env)
+                            (cdr frames))))))
 
 ; takes stack of frames => returns stack of frames
 (define (step frames)
