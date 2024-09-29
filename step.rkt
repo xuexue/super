@@ -37,10 +37,15 @@
          ((halt) frames)
          ((call)
           (if (null? exprs)
-              (error "TODO: actually call the function")
-              (expr->frames (car exprs) ; TODO --- not actually correct
-                            env 
-                            (cons (frame 'call (frame-vals top) (cdr exprs) env) (cdr frames)))))
+              (let* ((vals (reverse (frame-vals top)))
+                     (proc (car vals))
+                     (arg* (cdr vals))
+                     (cenv (env-extend* (closure-env proc) (closure-param* proc) arg*)))
+                  (expr->frames (closure-body proc) cenv (cdr frames)))
+              (expr->frames (car exprs)
+                            env
+                            (cons (frame 'call (cdr (frame-vals top)) (frame-exprs top) (frame-env env))
+                                  (cdr frames)))))
          (else
           (cond
             ((assq op (map2 cons '(cons atom=?) (list cons atom=?)))
@@ -153,6 +158,10 @@
   (test-equal? "evaluate a quote"
                (eval '(quote 0) env.empty)
                0)
+  (test-equal? "evaluate a lambda and function call"
+               (eval '(call (lambda (x) x) (quote 1)) env.empty)
+               1)
+
   (test-equal? "evaluate a variable"
                (eval 'v (env-extend* env.empty '(v) '(0)))
                0)
