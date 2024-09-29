@@ -64,7 +64,10 @@
                        (expr->frames (cadr op) env (cdr frames))
                        (expr->frames (caddr op) env (cdr frames))))
          ((lambda) (frames-pushval (cdr frames) (make-closure op env)))
-         ((letrec) (error "TODO"))
+         ((letrec) (let ((bpair* (cadr op)))
+                     (expr->frames (caddr op)
+                                   (env-extend*/rec env (map car bpair*) (map cdr bpair*))
+                                   (cdr frames))))
          (else (error "invalid frame op" top)))))))
 
 (define (expr->frames expr env rest-frames)
