@@ -86,7 +86,24 @@
              (with-vector (car vals) cx
                           (lambda (vec cx) (list (state (frames-pushval rest (vector-ref vec)) cx)))
                           on-error))
-            ((assq op (map2 cons '(= symbol=? +) (list = symbol=? +)))
+            ((equal? op '=)
+             (let ((n1 (walk (cadr vals) cx)) (n2 (walk (car vals) cx)))
+               (with-number
+                n1
+                cx
+                (lambda (cx)
+                  (with-number
+                   n2
+                   cx
+                   (lambda (cx)
+                     (if (or (lvar? n1) (lvar? n2))
+                         (with-= n1 n2 cx
+                                 (lambda (cx) (list (state (frames-pushval rest #t) cx)))
+                                 (lambda (cx) (list (state (frames-pushval rest #f) cx))))
+                         (list (state (frames-pushval rest (= n1 n2)) cx))))
+                   on-error))
+                on-error)))
+            ((assq op (map2 cons '(symbol=? +) (list symbol=? +)))
              => (lambda (name&proc)
                   (error "todo")
                   ))
