@@ -14,20 +14,21 @@
          (op    (frame-op f))
          (vals  (frame-vals f))
          (exprs (frame-exprs f))
-         (env   (frame-env f)))
+         (env   (frame-env f))
+         (rest  (cdr frames)))
     (if (null? exprs)
-        (cons (frame op (cons val vals) exprs env) (cdr frames))
+        (cons (frame op (cons val vals) exprs env) rest)
         (expr->frames (car exprs)
                       env
-                      (cons (frame op (cons val vals) (cdr exprs) env)
-                            (cdr frames))))))
+                      (cons (frame op (cons val vals) (cdr exprs) env) rest)))))
 
 ; takes stack of frames => returns stack of frames
 (define (step frames)
   (let* ((top  (car frames))
          (op   (frame-op top))
          (env  (frame-env top))
-         (vals (frame-vals top)))
+         (vals (frame-vals top))
+         (rest (cdr frames)))
     (cond
       ((symbol? op)
        (case op
@@ -36,32 +37,32 @@
                         (proc (car vals))
                         (arg* (cdr vals))
                         (cenv (env-extend* (closure-env proc) (closure-param* proc) arg*)))
-                   (expr->frames (closure-body proc) cenv (cdr frames))))
+                   (expr->frames (closure-body proc) cenv rest)))
          (else
           (cond
             ((assq op (map2 cons '(cons atom=?) (list cons atom=?)))
              => (lambda (name&proc)
-                  (frames-pushval (cdr frames) (apply (cdr name&proc) (reverse vals)))))
+                  (frames-pushval rest (apply (cdr name&proc) (reverse vals)))))
             ((assq op
                    (map2 cons
                          '(car cdr null? boolean? pair? number? symbol? procedure?)
                          (list car cdr null? boolean? pair? number? symbol? closure?)))
              => (lambda (name&proc)
-                  (frames-pushval (cdr frames) ((cdr name&proc) (car vals)))))
+                  (frames-pushval rest ((cdr name&proc) (car vals)))))
             (else (error "invalid frame op" top))))))
       ((not (pair? op)) (error "invalid frame op" top))
       (else
        (case (car op)
-         ((lookup) (frames-pushval (cdr frames) (env-ref env (cadr op))))
-         ((quote)  (frames-pushval (cdr frames) (cadr op)))
+         ((lookup) (frames-pushval rest (env-ref env (cadr op))))
+         ((quote)  (frames-pushval rest (cadr op)))
          ((if)     (if (car vals)
-                       (expr->frames (cadr op) env (cdr frames))
-                       (expr->frames (caddr op) env (cdr frames))))
-         ((lambda) (frames-pushval (cdr frames) (make-closure op env)))
+                       (expr->frames (cadr op) env rest)
+                       (expr->frames (caddr op) env rest)))
+         ((lambda) (frames-pushval rest (make-closure op env)))
          ((letrec) (let ((bpair* (cadr op)))
                      (expr->frames (caddr op)
                                    (env-extend*/rec env (map car bpair*) (map cadr bpair*))
-                                   (cdr frames))))
+                                   rest)))
          (else (error "invalid frame op" top)))))))
 
 (define (expr->frames expr env rest-frames)
