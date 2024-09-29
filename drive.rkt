@@ -30,11 +30,14 @@
                            (on-error (cx:and cx (list 'not (list 'has-type 'vector? x))))))
       (else        (on-error cx)))))
 
+(define (with-= x1 x2 cx on-true on-false)
+  (append (on-true  (cx:and cx (list '= x1 x2)))
+          (on-false (cx:and cx (list 'not (list '= x1 x2))))))
+
 (define (with-ifcond x cx on-true on-false)
   (let ((x (walk x cx)))
     (cond
-      ((lvar? x) (append (on-true (cx:and cx (list 'not (list '= x #f))))
-                         (on-false (cx:and cx (list '= x #f)))))
+      ((lvar? x) (with-= x #f cx on-false on-true))
       (x         (on-true  cx))
       (else      (on-false cx)))))
 
@@ -46,6 +49,8 @@
       ((pred? x) (on-type cx))
       (else      (on-not cx)))))
 
+(define (with-number x cx on-number on-not) (with-type 'number? number? x cx on-number on-not))
+(define (with-symbol x cx on-symbol on-not) (with-type 'symbol? symbol? x cx on-symbol on-not))
 
 (define (drive st)
   (let* ((frames (state-frame* st))
