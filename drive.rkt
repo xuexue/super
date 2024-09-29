@@ -11,12 +11,35 @@
          (top        (car frames))
          (op         (frame-op top))
          (env        (frame-env top)))
-    (list st)))
+    (cond
+      ((symbol? op)
+       (case op
+         ((halt) (list st))
+         ((call) (error "todo"))
+         (else
+          (cond
+            ((assq op (map2 cons '(cons = symbol=? + vector-ref) (list cons = symbol=? + vector-ref)))
+             => (lambda (name&proc) (error "todo")))
+            ((assq op
+                   (map2 cons
+                         '(car cdr null? boolean? pair? number? symbol? procedure? vector vector?)
+                         (list car cdr null? boolean? pair? number? symbol? closure? vector vector?)))
+             => (lambda (name&proc) (error "todo")))
+            (else (error "invalid frame op" top))))))
+      ((not (pair? op)) (error "invalid frame op" top))
+      (else
+       (case (car op)
+         ((lookup) (error "todo"))
+         ((quote)  (error "todo"))
+         ((if)     (error "todo"))
+         ((lambda) (error "todo"))
+         ((letrec) (error "todo"))
+         (else (error "invalid frame op" top)))))))
 
 
 (module+ test
   (define car-frames
-          (list (frame 'car  '() '((cons (quote 1) (quote 0))) env.empty)
+          (list (frame 'car '((1 . 0)) '() env.empty)
                  frame.halt))
   (test-equal?
     "drive a car"
