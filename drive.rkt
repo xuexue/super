@@ -10,6 +10,7 @@
          (constraint (state-constraint st))
          (top        (car frames))
          (op         (frame-op top))
+         (vals       (frame-vals top))
          (env        (frame-env top)))
     (cond
       ((symbol? op)
@@ -21,9 +22,13 @@
             ((assq op (map2 cons '(cons = symbol=? + vector-ref) (list cons = symbol=? + vector-ref)))
              => (lambda (name&proc) (error "todo")))
             ((assq op
+                   (map2 cons '(car cdr)
+                         (list car cdr)))
+             => (lambda (name&proc) (error "todo")))
+            ((assq op
                    (map2 cons
-                         '(car cdr null? boolean? pair? number? symbol? procedure? vector vector?)
-                         (list car cdr null? boolean? pair? number? symbol? closure? vector vector?)))
+                         '(null? boolean? pair? number? symbol? procedure? vector vector?)
+                         (list null? boolean? pair? number? symbol? closure? vector vector?)))
              => (lambda (name&proc) (error "todo")))
             (else (error "invalid frame op" top))))))
       ((not (pair? op)) (error "invalid frame op" top))
