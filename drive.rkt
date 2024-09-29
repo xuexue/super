@@ -91,8 +91,8 @@
                     (with-pair val cx
                                (lambda (val cx) (list (state (frames-pushval rest (proc val)) cx)))
                                (lambda (cx)     (list (state (frames-error frames) cx)))))))
-            ((assq op (map2 cons '(vector) (list vector)))
-             => (lambda (name&proc) (error "todo")))
+            ((symbol=? op 'vector)
+             (list (state (frames-pushval rest (vector (walk (car vals) cx))) cx)))
             ((assq op
                    (map2 cons
                          '(null? boolean? pair? number? symbol? procedure? vector?)
