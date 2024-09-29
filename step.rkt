@@ -24,26 +24,19 @@
 
 ; takes stack of frames => returns stack of frames
 (define (step frames)
-  (let* ((top         (car frames))
-         (op          (frame-op top))
-         (env         (frame-env top))
-         (vals        (frame-vals top))
-         (exprs       (frame-exprs top)))
+  (let* ((top  (car frames))
+         (op   (frame-op top))
+         (env  (frame-env top))
+         (vals (frame-vals top)))
     (cond
       ((symbol? op)
        (case op
          ((halt) frames)
-         ((call)
-          (if (null? exprs)
-              (let* ((vals (reverse vals))
-                     (proc (car vals))
-                     (arg* (cdr vals))
-                     (cenv (env-extend* (closure-env proc) (closure-param* proc) arg*)))
-                  (expr->frames (closure-body proc) cenv (cdr frames)))
-              (expr->frames (car exprs)
-                            env
-                            (cons (frame 'call vals (cdr exprs) env)
-                                  (cdr frames)))))
+         ((call) (let* ((vals (reverse vals))
+                        (proc (car vals))
+                        (arg* (cdr vals))
+                        (cenv (env-extend* (closure-env proc) (closure-param* proc) arg*)))
+                   (expr->frames (closure-body proc) cenv (cdr frames))))
          (else
           (cond
             ((assq op (map2 cons '(cons atom=?) (list cons atom=?)))
