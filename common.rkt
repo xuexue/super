@@ -108,6 +108,13 @@
 (define frame.halt
   (frame 'halt '() '() env.empty))
 
-(define (state frame* constraint*) (list frame* constraint*))
-(define (state-frame*      st) (car  st))
-(define (state-constraint* st) (cadr st))
+; logic variable
+(struct lvar (name) #:prefab)
+
+; constraints
+(define constraint.empty '())
+(define constraint-add   cons)
+
+(define (state frame* constraint) (list frame* constraint))
+(define (state-frame*     st) (car  st))
+(define (state-constraint st) (cadr st))
