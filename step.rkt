@@ -169,6 +169,49 @@
                (eval '(if (quote #f) (quote 0) (quote 1)) env.empty)
                1)
 
+
+  (test-equal? "eval empty atom"
+               (eval '(quote ()) env.empty)
+               '())
+  (test-equal? "eval cons of two atoms"
+               (eval '(cons (quote ()) (quote ())) env.empty)
+               '(() . ()))
+  (test-equal? "eval car of cons of two atoms"
+               (eval '(car (cons (quote 0) (quote 1))) env.empty)
+               0)
+  (test-equal? "eval cdr of cons of two atoms"
+               (eval '(cdr (cons (quote 0) (quote 1))) env.empty)
+               1)
+  (test-equal? "eval numl? quote 0"
+               (eval '(number? (quote 0)) env.empty)
+               #t)
+  (test-equal? "eval check that 0 is not a procedure"
+               (eval '(procedure? (quote 0)) env.empty)
+               #f)
+  (test-equal? "eval check that a lambda evaluates to a procedure"
+               (eval '(procedure? (lambda () (quote 0))) env.empty)
+               #t)
+  (test-equal? "eval comparison of numbers"
+               (eval '(atom=? (quote 0) (quote 1)) env.empty)
+               #f)
+  (test-equal? "eval if expression"
+               (eval '(if (quote #t) (quote 0) (quote 1)) env.empty)
+               0)
+  (test-equal? "eval calling a zero argument function"
+               (eval '(call (lambda () (quote 4))) env.empty)
+               4)
+  (test-equal? "eval calling a one argument function"
+               (eval '(call (lambda (v) v) (quote 1)) env.empty)
+               1)
+  (test-equal? "eval calling a three argument function"
+               (eval '(call (lambda (x y z) y) (quote 1) (quote 2) (quote 3)) env.empty)
+               2)
+  (test-equal? "eval nested calling of functions"
+               (eval '(call (call (lambda (x) (lambda (y) x)) (quote 1)) (quote 2)) env.empty)
+               1)
+  (test-equal? "eval passing in functions as args"
+               (eval '(call (lambda (f x) (call f x)) (lambda (x) x) (quote 1)) env.empty)
+               1)
 )
 
 
