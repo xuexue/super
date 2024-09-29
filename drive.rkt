@@ -6,7 +6,7 @@
   (require rackunit))
 
 (define (new-var)
-  (lvar 'x))
+  (lvar (gensym 'x)))
 
 (define (drive st)
   (let* ((frames (state-frame* st))
