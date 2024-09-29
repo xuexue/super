@@ -8,6 +8,18 @@
 (define (new-var)
   (lvar (gensym 'x)))
 
+;; TODO:
+(define (walk x cx) x)
+
+(define (with-pair x cx on-pair on-error)
+  (let ((x (walk x cx)))
+    (cond
+      ((pair? x) (on-pair x cx))
+      ((lvar? x) (append (let ((p (cons (new-var) (new-var))))
+                           (on-pair p (cx:and cx (list '= p x))))
+                         (on-error (cx:and cx (list 'not (list 'has-type 'pair x))))))
+      (else      (on-error cx)))))
+
 (define (drive st)
   (let* ((frames (state-frame* st))
          (cx     (state-constraint st))
@@ -29,16 +41,9 @@
              => (lambda (name&proc)
                   (let ((val  (car vals))
                         (proc (cdr name&proc)))
-                    (cond [(lvar? val)
-                           (list
-                             (let* ((lv1 (new-var)) ; names of the fresh logic variable
-                                    (lv2 (new-var))
-                                    (c^  (cx:and cx (list '= (cons lv1 lv2) val))))
-                                (state (frames-pushval rest lv1) c^))
-                             (let* ((c^  (cx:and cx (list 'not (list 'has-type 'pair val)))))
-                                (state (frames-error frames) c^)))]
-                          [(pair? val) (list (state (frames-pushval rest (proc val)) cx))]
-                          [else        (list (state (frames-error frames) cx))]))))
+                    (with-pair val cx
+                               (lambda (val cx) (list (state (frames-pushval rest (proc val)) cx)))
+                               (lambda (cx)     (list (state (frames-error frames) cx)))))))
             ((assq op
                    (map2 cons
                          '(null? boolean? pair? number? symbol? procedure? vector vector?)
