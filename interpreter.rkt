@@ -39,7 +39,7 @@
                      (unless (andmap lambda? lam*) (error "invalid lambdas" lam*))
                      (eval body (env-extend*/rec env x* lam*)))))
        (else (cond
-               ((assq (car expr) (map2 cons '(cons atom=?) (list cons atom=?)))
+               ((assq (car expr) (map2 cons '(cons atom=? +) (list cons atom=? +)))
                 => (lambda (op-pair)
                      (expr-arity=?! 2)
                      ((cdr op-pair) (eval (cadr expr) env) (eval (caddr expr) env))))
@@ -96,6 +96,13 @@
                (eval '(call (lambda (f x) (call f x)) (lambda (x) x) (quote 1)) env.empty)
                1)
 
+  (test-equal? "eval addition of numbers"
+               (eval '(+ (quote 2) (quote 2)) env.empty)
+               4)
+  (test-equal? "eval addition of numbers in a function"
+               (eval '(call (lambda (v) (+ v (quote 1))) (quote 2)) env.empty)
+               3)
+
   ;(test-equal? "eval of a weird letrec"
   ;             (eval '(letrec ((f (lambda (x) f))) (call f (quote 1))) env.empty)
   ;             '())
@@ -106,6 +113,14 @@
                                             (quote #f)))))
                         (call has0? (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ())))))) env.empty)
                #t)
+  (test-equal? "eval of a letrec that counts the lenth of a list"
+               (eval '(letrec ((len (lambda (lst)
+                                        (if (pair? lst)
+                                            (+ (quote 1) (call len (cdr lst)))
+                                            (quote 0)))))
+                        (call len (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ())))))) env.empty)
+               3)
+
   (test-equal? "eval of a letrec with 2 functions"
                (eval '(letrec ((has0? (lambda (lst)
                                         (if (pair? lst)

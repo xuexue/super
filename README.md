@@ -20,6 +20,7 @@ E ::=
     ;; constructors
     | (quote A)
     | (cons E E)
+    | (+ E E)
     | LAM
     ;; accessors
     | (car E)
@@ -61,6 +62,7 @@ OP ::=
      ;; constructors
      | (quote A)
      | cons
+     | +
      | LAM
      ;; accessors
      | car
