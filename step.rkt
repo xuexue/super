@@ -1,7 +1,6 @@
-#lang racket
-
+#lang racket/base
 (provide step)
-(require "common.rkt")
+(require "common.rkt" racket/bool)
 
 (module+ test
   (require rackunit))

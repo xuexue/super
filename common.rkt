@@ -1,5 +1,6 @@
 #lang racket/base
 (provide (all-defined-out))
+(require racket/bool)
 
 (define (atom?  x)   (or (null? x) (boolean? x) (number? x) (symbol? x)))
 (define (atom?! x)   (unless (atom? x) (error "not an atom" x)))

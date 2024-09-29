@@ -2,8 +2,7 @@
 (provide eval)
 (module+ test
   (require rackunit))
-(require racket/bool)
-(require "common.rkt")
+(require "common.rkt" racket/bool)
 
 (define (eval expr env)
   (define (expr-arity=?! n)
