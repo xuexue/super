@@ -39,14 +39,14 @@
                      (unless (andmap lambda? lam*) (error "invalid lambdas" lam*))
                      (eval body (env-extend*/rec env x* lam*)))))
        (else (cond
-               ((assq (car expr) (map2 cons '(cons atom=? +) (list cons atom=? +)))
+               ((assq (car expr) (map2 cons '(cons atom=? + vector-ref) (list cons atom=? + vector-ref)))
                 => (lambda (op-pair)
                      (expr-arity=?! 2)
                      ((cdr op-pair) (eval (cadr expr) env) (eval (caddr expr) env))))
                ((assq (car expr)
                       (map2 cons
-                            '(car cdr null? boolean? pair? number? symbol? procedure?)
-                            (list car cdr null? boolean? pair? number? symbol? closure?)))
+                            '(car cdr null? boolean? pair? number? symbol? procedure? vector vector?)
+                            (list car cdr null? boolean? pair? number? symbol? closure? vector vector?)))
                 => (lambda (op-pair)
                      (expr-arity=?! 1)
                      ((cdr op-pair) (eval (cadr expr) env))))
@@ -95,13 +95,18 @@
   (test-equal? "eval passing in functions as args"
                (eval '(call (lambda (f x) (call f x)) (lambda (x) x) (quote 1)) env.empty)
                1)
-
   (test-equal? "eval addition of numbers"
                (eval '(+ (quote 2) (quote 2)) env.empty)
                4)
   (test-equal? "eval addition of numbers in a function"
                (eval '(call (lambda (v) (+ v (quote 1))) (quote 2)) env.empty)
                3)
+  (test-equal? "eval vector and vector-ref"
+               (eval '(vector-ref (vector (quote 2)) (quote 0)) env.empty)
+               2)
+  (test-equal? "eval vector?"
+               (eval '(vector? (vector (quote 2))) env.empty)
+               #t)
 
   ;(test-equal? "eval of a weird letrec"
   ;             (eval '(letrec ((f (lambda (x) f))) (call f (quote 1))) env.empty)

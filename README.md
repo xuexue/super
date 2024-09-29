@@ -20,15 +20,18 @@ E ::=
     ;; constructors
     | (quote A)
     | (cons E E)
+    | (vector E)
     | (+ E E)
     | LAM
     ;; accessors
     | (car E)
     | (cdr E)
+    | (vector-ref E E)
     ;; predicates
     | (atom=? E E)
     | (null? E)
     | (boolean? E)
+    | (vector? E)
     | (pair? E)
     | (number? E)
     | (symbol? E)
