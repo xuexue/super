@@ -73,7 +73,7 @@
       ((not (pair? op)) (error "invalid frame op" top))
       (else
        (case (car op)
-         ((lookup) (error "todo"))
+         ((lookup) (list (state (frames-pushval rest (env-ref env (op:lookup-v op))) cx)))
          ((quote)  (list (state (frames-pushval rest (quote-a op)) cx)))
          ((if) (with-ifcond
                  (car vals)
