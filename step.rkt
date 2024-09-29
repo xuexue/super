@@ -48,7 +48,7 @@
           (cond
             ((assq op (map2 cons '(cons atom=?) (list cons atom=?)))
              => (lambda (name&proc)
-                  (frames-pushval (cdr frames) (apply (cdr name&proc) vals))))
+                  (frames-pushval (cdr frames) (apply (cdr name&proc) (reverse vals)))))
             ((assq op
                    (map2 cons
                          '(car cdr null? boolean? pair? number? symbol? procedure?)
