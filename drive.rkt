@@ -55,6 +55,7 @@
          (op     (frame-op top))
          (vals   (frame-vals top))
          (env    (frame-env top)))
+    (define (on-error cx) (list (state (frames-error frames) cx)))
     (cond
       ((symbol? op)
        (case op
@@ -79,7 +80,7 @@
             ((equal? op 'vector-ref)
              (with-vector (car vals) cx
                           (lambda (vec cx) (list (state (frames-pushval rest (vector-ref vec)) cx)))
-                          (lambda (cx)     (list (state (frames-error frames) cx)))))
+                          on-error))
             ((assq op (map2 cons '(= symbol=? +) (list = symbol=? +)))
              => (lambda (name&proc)
                   (error "todo")
@@ -90,14 +91,14 @@
                         (proc (cdr name&proc)))
                     (with-pair val cx
                                (lambda (val cx) (list (state (frames-pushval rest (proc val)) cx)))
-                               (lambda (cx)     (list (state (frames-error frames) cx)))))))
+                               on-error))))
             ((symbol=? op 'vector)
              (list (state (frames-pushval rest (vector (walk (car vals) cx))) cx)))
             ((assq op
                    (map2 cons
                          '(null? boolean? pair? number? symbol? procedure? vector?)
                          (list null? boolean? pair? number? symbol? procedure? vector?)))
-             => (lambda (name&proc) 
+             => (lambda (name&proc)
                     (with-type (car vals)
                                (car name&proc)
                                (cdr name&proc)
