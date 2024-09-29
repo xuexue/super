@@ -9,9 +9,18 @@
 (struct frame (op vals exprs env) #:prefab)
 (define frame.halt
   (frame 'halt '() '() env.empty))
-(define (frame-addval f val)
-    (frame (frame-op f) (cons val (frame-vals f)) (frame-op f) (frame-env f)))
-
+(define (frames-pushval frames val)
+  (let ((f     (car frames)))
+    (let ((op    (frame-op f))
+          (vals  (frame-vals f))
+          (exprs (frame-exprs f))
+          (env   (frame-env f)))
+      (if (null? exprs)
+          (cons (frame op (cons val vals) exprs env) (cdr frames))
+          (expr->frames (car exprs)
+                        env
+                        (cons (frame op (cons val vals) (cdr exprs) env)
+                              (cdr frames)))))))
 
 ; takes stack of frames => returns stack of frames
 (define (step frames)
@@ -49,12 +58,12 @@
       ((not (pair? op)) (error "invalid frame op" top))
       (else
        (case (car op)
-         ((lookup) (cons (frame-addval next (env-ref env (cadr op))) rest-frames))
-         ((quote)  (cons (frame-addval next (cadr op)) rest-frames))
+         ((lookup) (frames-pushval (cdr frames) (env-ref env (cadr op))))
+         ((quote)  (frames-pushval (cdr frames) (cadr op)))
          ((if)     (if (car vals)
                        (expr->frames (cadr op) env (cdr frames))
                        (expr->frames (caddr op) env (cdr frames))))
-         ((lambda) (cons (frame-addval next (make-closure op env)) rest-frames))
+         ((lambda) (frames-pushval (cdr frames) (make-closure op env)))
          ((letrec) (error "TODO"))
          (else (error "invalid frame op" top)))))))
 
@@ -141,6 +150,9 @@
 
   (test-equal? "evaluate a quote"
                (eval '(quote 0) env.empty)
+               0)
+  (test-equal? "evaluate a variable"
+               (eval 'v (env-extend* env.empty '(v) '(0)))
                0)
   (test-equal? "evaluate an if"
                (eval '(if (quote #f) (quote 0) (quote 1)) env.empty)
