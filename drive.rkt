@@ -74,7 +74,7 @@
       (else
        (case (car op)
          ((lookup) (error "todo"))
-         ((quote)  (error "todo"))
+         ((quote)  (list (state (frames-pushval rest (quote-a op)) cx)))
          ((if) (with-ifcond
                  (car vals)
                  cx
