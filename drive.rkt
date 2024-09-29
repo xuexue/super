@@ -32,7 +32,19 @@
       ((symbol? op)
        (case op
          ((halt) (list st))
-         ((call) (error "todo"))
+         ((call) (let* ((vals (reverse vals))
+                        (proc (walk (car vals) cx))
+                        (arg* (map (lambda (v) (walk v cx)) (cdr vals))))
+                   (cond ((lvar? proc)
+                          (list (state (frames-stop frames) cx))) ; fix later
+                         ((procedure? proc)
+                          (let* ((cenv (env-extend* (closure-env proc)
+                                                    (closure-param* proc)
+                                                    arg*)))
+                              (list (state (expr->frames (closure-body proc)
+                                                         cenv
+                                                         rest) cx))))
+                         (else (list (state (frames-error frames) cx))))))
          (else
           (cond
             ((assq op (map2 cons '(cons = symbol=? + vector-ref) (list cons = symbol=? + vector-ref)))

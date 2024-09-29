@@ -105,12 +105,11 @@
 (define (op:if-f op)     (caddr op))
 
 (struct frame (op vals exprs env) #:prefab)
-(define frame.halt
-  (frame 'halt '() '() env.empty))
-(define frame.error
-  (frame 'error '() '() env.empty))
-(define (frames-error frames)
-  (cons frame.error frames))
+(define frame.halt  (frame 'halt  '() '() env.empty))
+(define frame.error (frame 'error '() '() env.empty))
+(define frame.stop  (frame 'stop  '() '() env.empty))
+(define (frames-error frames) (cons frame.error frames))
+(define (frames-stop  frames) (cons frame.stop  frames))
 
 
 ; logic variable
