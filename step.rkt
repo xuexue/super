@@ -28,23 +28,21 @@
          (op          (frame-op top))
          (env         (frame-env top))
          (vals        (frame-vals top))
-         (exprs       (frame-exprs top))
-         (next        (and (pair? (cdr frames)) (cadr frames)))
-         (rest-frames (and next (cddr frames))))
+         (exprs       (frame-exprs top)))
     (cond
       ((symbol? op)
        (case op
          ((halt) frames)
          ((call)
           (if (null? exprs)
-              (let* ((vals (reverse (frame-vals top)))
+              (let* ((vals (reverse vals))
                      (proc (car vals))
                      (arg* (cdr vals))
                      (cenv (env-extend* (closure-env proc) (closure-param* proc) arg*)))
                   (expr->frames (closure-body proc) cenv (cdr frames)))
               (expr->frames (car exprs)
                             env
-                            (cons (frame 'call (cdr (frame-vals top)) (frame-exprs top) (frame-env env))
+                            (cons (frame 'call vals (cdr exprs) env)
                                   (cdr frames)))))
          (else
           (cond
@@ -158,7 +156,10 @@
                (eval '(quote 0) env.empty)
                0)
   (test-equal? "evaluate a lambda and function call"
-               (eval '(call (lambda (x) x) (quote 1)) env.empty)
+               (eval '(call (lambda (x y) x) (quote 0) (quote 1)) env.empty)
+               0)
+  (test-equal? "evaluate a lambda and function call"
+               (eval '(call (lambda (x y) x) (quote 1) (quote 0)) env.empty)
                1)
 
   (test-equal? "evaluate a variable"
