@@ -49,9 +49,8 @@
          (else
           (cond
             ((assq op (map2 cons '(cons atom=?) (list cons atom=?)))
-             => (lambda (op-pair)
-                  (let ((proc (cdr op-pair)))
-                    (error "TODO"))))
+             => (lambda (name&proc)
+                  (frames-pushval (cdr frames) (apply (cdr name&proc) vals))))
             ((assq op
                    (map2 cons
                          '(car cdr null? boolean? pair? number? symbol? procedure?)
