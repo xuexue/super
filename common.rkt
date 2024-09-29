@@ -99,3 +99,7 @@
 
 (define (primop-rand1 E) (cadr E))
 (define (primop-rand2 E) (caddr E))
+
+(define (op:lookup-v op) (cadr op))
+(define (op:if-t op)     (cadr op))
+(define (op:if-f op)     (caddr op))
