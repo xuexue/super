@@ -103,7 +103,24 @@
                          (list (state (frames-pushval rest (= n1 n2)) cx))))
                    on-error))
                 on-error)))
-            ((assq op (map2 cons '(symbol=? +) (list symbol=? +)))
+            ((equal? op 'symbol=?)
+             (let ((s1 (walk (cadr vals) cx)) (s2 (walk (car vals) cx)))
+               (with-symbol
+                s1
+                cx
+                (lambda (cx)
+                  (with-symbol
+                   s2
+                   cx
+                   (lambda (cx)
+                     (if (or (lvar? s1) (lvar? s2))
+                         (with-= s1 s2 cx
+                                 (lambda (cx) (list (state (frames-pushval rest #t) cx)))
+                                 (lambda (cx) (list (state (frames-pushval rest #f) cx))))
+                         (list (state (frames-pushval rest (symbol=? s1 s2)) cx))))
+                   on-error))
+                on-error)))
+            ((assq op (map2 cons '(+) (list +)))
              => (lambda (name&proc)
                   (error "todo")
                   ))
