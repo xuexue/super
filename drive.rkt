@@ -28,6 +28,15 @@
       (x         (on-true  cx))
       (else      (on-false cx)))))
 
+(define (with-type t pred? x cx on-type on-not)
+  (let ((x (walk x cx)))
+    (cond
+      ((lvar? x) (append (on-type (cx:and cx (list 'has-type t x))))
+                         (on-not  (cx:and cx (list 'not (list 'has-type t x)))))
+      ((pred? x) (on-type cx))
+      (else      (on-not cx)))))
+
+
 (define (drive st)
   (let* ((frames (state-frame* st))
          (cx     (state-constraint st))
@@ -64,11 +73,18 @@
                     (with-pair val cx
                                (lambda (val cx) (list (state (frames-pushval rest (proc val)) cx)))
                                (lambda (cx)     (list (state (frames-error frames) cx)))))))
+            ((assq op (map2 cons '(vector) (list vector)))
+             => (lambda (name&proc) (error "todo")))
             ((assq op
                    (map2 cons
-                         '(null? boolean? pair? number? symbol? procedure? vector vector?)
-                         (list null? boolean? pair? number? symbol? closure? vector vector?)))
-             => (lambda (name&proc) (error "todo")))
+                         '(null? boolean? pair? number? symbol? procedure? vector?)
+                         (list null? boolean? pair? number? symbol? procedure? vector?)))
+             => (lambda (name&proc) 
+                    (with-type (car vals)
+                               (car name&proc)
+                               (cdr name&proc)
+                               (lambda (cx) (list (state (frames-pushval rest #t) cx)))
+                               (lambda (cx) (list (state (frames-pushval rest #f) cx))))))
             (else (error "invalid frame op" top))))))
       ((not (pair? op)) (error "invalid frame op" top))
       (else

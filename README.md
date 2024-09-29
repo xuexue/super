@@ -113,7 +113,7 @@ V  ::= A | #(V) | (V . V) | #s(closure (<symbol> ...) E ENV) | LV
 LV    ::= #s(lvar <symbol>)
 
 ;; Types
-TYPE ::= null | num | pair | symbol | boolean | procedure | vector
+TYPE ::= null? | num? | pair? | symbol? | boolean? | procedure? | vector?
 
 ;; constraint
 C  ::= (= V V)
