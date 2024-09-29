@@ -40,13 +40,13 @@
                    (expr->frames (closure-body proc) cenv rest)))
          (else
           (cond
-            ((assq op (map2 cons '(cons atom=? +) (list cons atom=? +)))
+            ((assq op (map2 cons '(cons atom=? + vector-ref) (list cons atom=? + vector-ref)))
              => (lambda (name&proc)
                   (frames-pushval rest (apply (cdr name&proc) (reverse vals)))))
             ((assq op
                    (map2 cons
-                         '(car cdr null? boolean? pair? number? symbol? procedure?)
-                         (list car cdr null? boolean? pair? number? symbol? closure?)))
+                         '(car cdr null? boolean? pair? number? symbol? procedure? vector vector?)
+                         (list car cdr null? boolean? pair? number? symbol? closure? vector vector?)))
              => (lambda (name&proc)
                   (frames-pushval rest ((cdr name&proc) (car vals)))))
             (else (error "invalid frame op" top))))))
@@ -80,20 +80,19 @@
                  (expr->frames proc env (cons (frame 'call '() rand* env) rest-frames))))
        ((quote lambda letrec) (cons (frame expr '() '() env) rest-frames))
        (else (cond
-               ((member-atom (car expr) '(cons atom=? +))
+               ((member-atom (car expr) '(cons atom=? + vector-ref))
                 => (lambda (op*)
                      (let ((op (car op*))
                            (e1 (cadr expr))
                            (e2 (caddr expr)))
                        (expr->frames e1 env (cons (frame op '() (list e2) env) rest-frames)))))
                ((member-atom (car expr)
-                             '(null? boolean? pair? number? symbol? procedure? car cdr))
+                             '(null? boolean? pair? number? symbol? procedure? car cdr vector vector?))
                 => (lambda (op*)
                      (let ((op (car op*))
                            (e  (cadr expr)))
                        (expr->frames e env (cons (frame op '() '() env) rest-frames)))))
                (else (error "invalid expression" expr)))))]))
-
 
 (define (toframes expr)
     (expr->frames expr env.empty (list frame.halt)))
@@ -217,7 +216,12 @@
   (test-equal? "eval addition of numbers in a function"
                (eval '(call (lambda (v) (+ v (quote 1))) (quote 2)) env.empty)
                3)
-
+  (test-equal? "eval vector and vector-ref"
+               (eval '(vector-ref (vector (quote 2)) (quote 0)) env.empty)
+               2)
+  (test-equal? "eval vector?"
+               (eval '(vector? (vector (quote 2))) env.empty)
+               #t)
 
   ;(test-equal? "eval of a weird letrec"
   ;             (eval '(letrec ((f (lambda (x) f))) (call f (quote 1))) env.empty)

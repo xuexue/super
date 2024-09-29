@@ -65,11 +65,13 @@ OP ::=
      ;; constructors
      | (quote A)
      | cons
+     | vector
      | +
      | LAM
      ;; accessors
      | car
      | cdr
+     | vector-ref
      ;; predicates
      | atom=?
      | null?
@@ -78,6 +80,7 @@ OP ::=
      | number?
      | symbol?
      | procedure?
+     | vector?
      ;; case analysis
      | (if E E)
      ;; procedure call
