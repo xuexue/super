@@ -115,7 +115,7 @@ LV    ::= #s(lvar <symbol>)
 ;; Types
 TYPE ::= null | num | pair | symbol | boolean | procedure | vector
 
-;; constraints
+;; constraint
 C  ::= (= V V)
      | (has-type V TYPE)
      | (not C)
@@ -123,9 +123,6 @@ C  ::= (= V V)
      | (or  C ...)
 
 ;; State
-STATE = (STACK, C)
+STATE = (STACK . C)
 ```
-
-Essentially, `drive` will take a logic variable environment (mapping of symbols to `LV`),
-and a `STATE`, and produce a list of `STATE`s.
 
