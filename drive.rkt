@@ -1,6 +1,7 @@
 #lang racket/base
 (provide drive)
 (require "common.rkt" "step.rkt" racket/bool)
+(require racket/pretty)
 
 (module+ test
   (require rackunit))
@@ -210,11 +211,22 @@
 
 
 (module+ test
+  (define verbose #f)
+
   (define (test-equal-singleton? msg frames (constraints constraint.empty))
     (test-equal?
       msg
       (drive (state frames constraints))
       (list (state (step frames) constraints))))
+
+  (define (print-and-test-sequence msg expr n)
+    (define initframes (toframes expr))
+    (let loop ((frames initframes)
+               (i      1))
+      (when (<= i n)
+        (when verbose (pretty-write frames))
+        (test-equal-singleton? (string-append msg "(step " (number->string n) ")") frames)
+        (loop (step frames) (+ i 1)))))
 
   (test-equal-singleton? "drive a car" (step (toframes '(car (quote (1 . 0))))))
   (test-equal-singleton? "drive a cdr" (step (toframes '(cdr (quote (1 . 0))))))
@@ -222,13 +234,5 @@
   (test-equal-singleton? "drive a quote inside cdr" (toframes '(cdr (quote (1 . 0)))))
   (test-equal-singleton? "drive a cons" (step (toframes '(cons (quote 0) (quote 1)))))
 
-  ;(require racket/pretty)
-  ;(pretty-print (toframes '(call (lambda (v) (quote 0)) (quote 2))))
-  ;(pretty-print (step (toframes '(call (lambda (v) (quote 0)) (quote 2)))))
-  ;(pretty-print (step (step (toframes '(call (lambda (v) (quote 0)) (quote 2))))))
-  ;(pretty-print (step (step (step (toframes '(call (lambda (v) (quote 0)) (quote 2)))))))
-  (test-equal-singleton? "drive a lambda inside call" (toframes '(call (lambda (v) (quote 0)) (quote 2))))
-  (test-equal-singleton? "drive the arg to a call" (step (toframes '(call (lambda (v) (quote 0)) (quote 2)))))
-  (test-equal-singleton? "drive the actual call" (step (step (toframes '(call (lambda (v) (quote 0)) (quote 2))))))
-  (test-equal-singleton? "drive the body of a call" (step (step (step (toframes '(call (lambda (v) (quote 0)) (quote 2)))))))
+  (print-and-test-sequence "drive a call" '(call (lambda (v) (quote 0)) (quote 2)) 4)
 )
