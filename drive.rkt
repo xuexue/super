@@ -210,8 +210,8 @@
 
 
 (module+ test
-  (define car-frames (list (frame 'car '((1 . 0)) '() env.empty) frame.halt))
-  (define cdr-frames (list (frame 'cdr '((1 . 0)) '() env.empty) frame.halt))
+  (define car-frames (step (toframes '(car (quote (1 . 0))))))
+  (define cdr-frames (step (toframes '(cdr (quote (1 . 0))))))
   (test-equal?
     "drive a car"
     (drive (state car-frames constraint.empty))

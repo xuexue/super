@@ -1,5 +1,5 @@
 #lang racket/base
-(provide step frames-pushval expr->frames)
+(provide step frames-pushval expr->frames toframes)
 (require "common.rkt" racket/bool)
 
 (module+ test
@@ -145,6 +145,12 @@
                (list (frame '(lambda (v) (quote 0)) '() '() env.empty)
                      (frame 'call '() '((quote 2)) env.empty)
                      frame.halt))
+  (test-equal? "create frame for a car and take a step"
+               (step (toframes '(car (quote (1 . 0)))))
+               (list (frame 'car '((1 . 0)) '() env.empty) frame.halt))
+  (test-equal? "create frame for a cdr and take a step"
+               (step (toframes '(cdr (quote (1 . 0)))))
+               (list (frame 'cdr '((1 . 0)) '() env.empty) frame.halt))
 
   (test-equal? "evaluate a quote"
                (eval '(quote 0) env.empty)
