@@ -116,7 +116,7 @@
                         (arg* (map (lambda (v) (walk v cx)) (cdr vals))))
                    (cond ((lvar? proc)
                           (list (state (frames-stop frames) cx))) ; fix later
-                         ((procedure? proc)
+                         ((closure? proc)
                           (let* ((cenv (env-extend* (closure-env proc)
                                                     (closure-param* proc)
                                                     arg*)))
@@ -218,4 +218,17 @@
 
   (test-equal-singleton? "drive a car" (step (toframes '(car (quote (1 . 0))))))
   (test-equal-singleton? "drive a cdr" (step (toframes '(cdr (quote (1 . 0))))))
+  (test-equal-singleton? "drive a quote" (toframes '(quote (1 . 0))))
+  (test-equal-singleton? "drive a quote inside cdr" (toframes '(cdr (quote (1 . 0)))))
+  (test-equal-singleton? "drive a cons" (step (toframes '(cons (quote 0) (quote 1)))))
+
+  ;(require racket/pretty)
+  ;(pretty-print (toframes '(call (lambda (v) (quote 0)) (quote 2))))
+  ;(pretty-print (step (toframes '(call (lambda (v) (quote 0)) (quote 2)))))
+  ;(pretty-print (step (step (toframes '(call (lambda (v) (quote 0)) (quote 2))))))
+  ;(pretty-print (step (step (step (toframes '(call (lambda (v) (quote 0)) (quote 2)))))))
+  (test-equal-singleton? "drive a lambda inside call" (toframes '(call (lambda (v) (quote 0)) (quote 2))))
+  (test-equal-singleton? "drive the arg to a call" (step (toframes '(call (lambda (v) (quote 0)) (quote 2)))))
+  (test-equal-singleton? "drive the actual call" (step (step (toframes '(call (lambda (v) (quote 0)) (quote 2))))))
+  (test-equal-singleton? "drive the body of a call" (step (step (step (toframes '(call (lambda (v) (quote 0)) (quote 2)))))))
 )
