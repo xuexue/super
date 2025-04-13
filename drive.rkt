@@ -63,8 +63,8 @@
     (cond
       ((pair? x) (on-pair x cx))
       ((lvar? x) (append (let ((p (cons (new-var) (new-var))))
-                           (on-pair p (cx:and cx (list '= p x))))
-                         (on-error (cx:and cx (list 'not (list 'has-type 'pair? x))))))
+                           (on-pair p (cx:and cx (cx:= p x))))
+                         (on-error (cx:and cx (cx:not (list 'has-type 'pair? x))))))
       (else      (on-error cx)))))
 
 ;; This assumes all vectors contain a single element.
@@ -73,13 +73,13 @@
     (cond
       ((vector? x) (on-vector x cx))
       ((lvar?   x) (append (let ((v (vector (new-var))))
-                             (on-vector v (cx:and cx (list '= x v))))
-                           (on-error (cx:and cx (list 'not (list 'has-type 'vector? x))))))
+                             (on-vector v (cx:and cx (cx:= x v))))
+                           (on-error (cx:and cx (cx:not (list 'has-type 'vector? x))))))
       (else        (on-error cx)))))
 
 (define (with-= x1 x2 cx on-true on-false)
-  (append (on-true  (cx:and cx (list '= x1 x2)))
-          (on-false (cx:and cx (list 'not (list '= x1 x2))))))
+  (append (on-true  (cx:and cx (cx:= x1 x2)))
+          (on-false (cx:and cx (cx:not (cx:= x1 x2))))))
 
 (define (with-ifcond x cx on-true on-false)
   (let ((x (walk x cx)))
@@ -91,8 +91,8 @@
 (define (with-type t pred? x cx on-type on-not)
   (let ((x (walk x cx)))
     (cond
-      ((lvar? x) (append (on-type (cx:and cx (list 'has-type t x))))
-                         (on-not  (cx:and cx (list 'not (list 'has-type t x)))))
+      ((lvar? x) (append (on-type (cx:and cx (list 'has-type t x)))) ; make cx:has-type
+                         (on-not  (cx:and cx (cx:not (list 'has-type t x)))))
       ((pred? x) (on-type cx))
       (else      (on-not cx)))))
 

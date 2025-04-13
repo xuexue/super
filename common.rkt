@@ -126,6 +126,11 @@
         ((equal? c2 cx:false) cx:false)
         (else (list 'and c1 c2))))
 
+(define (cx:not c)
+  (cond ((equal? c cx:true) cx:false)
+        ((equal? c cx:false) cx:true)
+        (else (list 'not c)))) ; #TODO: double not elimination; use structs
+
 (define (cx:= v1 v2)
   (cond ((equal? v1 v2) cx:true)
         ((and (not (lvar? v1)) (not (lvar? v2))) cx:false)
