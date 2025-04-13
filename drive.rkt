@@ -235,4 +235,5 @@
   (test-equal-singleton? "drive a cons" (step (toframes '(cons (quote 0) (quote 1)))))
 
   (print-and-test-sequence "drive a call" '(call (lambda (v) (quote 0)) (quote 2)) 4)
+  (print-and-test-sequence "drive a call with 2 args" '(call (lambda (x y) x) (quote 1) (quote 2)) 6)
 )
