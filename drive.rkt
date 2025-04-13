@@ -210,14 +210,12 @@
 
 
 (module+ test
-  (define car-frames (step (toframes '(car (quote (1 . 0))))))
-  (define cdr-frames (step (toframes '(cdr (quote (1 . 0))))))
-  (test-equal?
-    "drive a car"
-    (drive (state car-frames constraint.empty))
-    (list (state (step car-frames) constraint.empty)))
-  (test-equal?
-    "drive a cdr"
-    (drive (state cdr-frames constraint.empty))
-    (list (state (step cdr-frames) constraint.empty)))
+  (define (test-equal-singleton? msg frames (constraints constraint.empty))
+    (test-equal?
+      msg
+      (drive (state frames constraints))
+      (list (state (step frames) constraints))))
+
+  (test-equal-singleton? "drive a car" (step (toframes '(car (quote (1 . 0))))))
+  (test-equal-singleton? "drive a cdr" (step (toframes '(cdr (quote (1 . 0))))))
 )
