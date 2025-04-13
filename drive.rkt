@@ -133,7 +133,7 @@
              (with-vector (cadr vals) cx
                           (lambda (vec cx)
                             (list (state (frames-pushval rest (vector-ref vec 0))
-                                         (cx:and cx (list '= (car vals) 0))))) ; TODO: need simplification in cx:and
+                                         (cx:and cx (cx:= (car vals) 0)))))
                           on-error))
             ((equal? op '=)
              (let ((n1 (walk (cadr vals) cx)) (n2 (walk (car vals) cx)))
@@ -214,6 +214,7 @@
 
 (module+ test
   (define (test-equal-singleton? msg frames (constraints constraint.empty))
+    ;(pretty-write (drive (state frames constraints)))
     (test-equal?
       msg
       (drive (state frames constraints))
@@ -236,5 +237,5 @@
   (print-and-test-sequence "drive a call" '(call (lambda (v) (quote 0)) (quote 2)) 4)
   (print-and-test-sequence "drive a call with 2 args" '(call (lambda (x y) x) (quote 1) (quote 2)) 6)
   (print-and-test-sequence "drive a cons" '(cons (quote 0) (quote 2)) 4)
-  (print-and-test-sequence "drive a vector" '(vector-ref (vector (quote 2)) (quote 0)) 3 #t) ; 4th step requires cx:and
+  (print-and-test-sequence "drive a vector" '(vector-ref (vector (quote 2)) (quote 0)) 4)
 )

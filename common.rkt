@@ -116,8 +116,20 @@
 (struct lvar (name) #:prefab)
 
 ; constraints
-(define constraint.empty '())
-(define (cx:and c1 c2) (list 'and c1 c2))
+(define cx:true #t)
+(define cx:false #f)
+(define constraint.empty cx:true)
+(define (cx:and c1 c2)
+  (cond ((equal? c1 cx:true) c2)
+        ((equal? c2 cx:true) c1)
+        ((equal? c1 cx:false) cx:false)
+        ((equal? c2 cx:false) cx:false)
+        (else (list 'and c1 c2))))
+
+(define (cx:= v1 v2)
+  (cond ((equal? v1 v2) cx:true)
+        ((and (not (lvar? v1)) (not (lvar? v2))) cx:false)
+        (else (list '= v1 v2))))
 
 (define (state frame* constraint) (list frame* constraint))
 (define (state-frame*     st) (car  st))
