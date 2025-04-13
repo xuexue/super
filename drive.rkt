@@ -130,8 +130,10 @@
             ((equal? op 'cons)
              (list (state (frames-pushval rest (cons (walk (cadr vals) cx) (walk (car vals) cx))) cx)))
             ((equal? op 'vector-ref)
-             (with-vector (car vals) cx
-                          (lambda (vec cx) (list (state (frames-pushval rest (vector-ref vec)) cx)))
+             (with-vector (cadr vals) cx
+                          (lambda (vec cx)
+                            (list (state (frames-pushval rest (vector-ref vec 0))
+                                         (cx:and cx (list '= (car vals) 0))))) ; TODO: need simplification in cx:and
                           on-error))
             ((equal? op '=)
              (let ((n1 (walk (cadr vals) cx)) (n2 (walk (car vals) cx)))
@@ -211,15 +213,13 @@
 
 
 (module+ test
-  (define verbose #f)
-
   (define (test-equal-singleton? msg frames (constraints constraint.empty))
     (test-equal?
       msg
       (drive (state frames constraints))
       (list (state (step frames) constraints))))
 
-  (define (print-and-test-sequence msg expr n)
+  (define (print-and-test-sequence msg expr n (verbose #f))
     (define initframes (toframes expr))
     (let loop ((frames initframes)
                (i      1))
@@ -232,8 +232,9 @@
   (test-equal-singleton? "drive a cdr" (step (toframes '(cdr (quote (1 . 0))))))
   (test-equal-singleton? "drive a quote" (toframes '(quote (1 . 0))))
   (test-equal-singleton? "drive a quote inside cdr" (toframes '(cdr (quote (1 . 0)))))
-  (test-equal-singleton? "drive a cons" (step (toframes '(cons (quote 0) (quote 1)))))
 
   (print-and-test-sequence "drive a call" '(call (lambda (v) (quote 0)) (quote 2)) 4)
   (print-and-test-sequence "drive a call with 2 args" '(call (lambda (x y) x) (quote 1) (quote 2)) 6)
+  (print-and-test-sequence "drive a cons" '(cons (quote 0) (quote 2)) 4)
+  (print-and-test-sequence "drive a vector" '(vector-ref (vector (quote 2)) (quote 0)) 3 #t) ; 4th step requires cx:and
 )
