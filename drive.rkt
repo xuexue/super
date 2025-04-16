@@ -187,9 +187,10 @@
                          '(null? boolean? pair? number? symbol? procedure? vector?)
                          (list null? boolean? pair? number? symbol? procedure? vector?)))
              => (lambda (name&proc)
-                    (with-type (car vals)
-                               (car name&proc)
-                               (cdr name&proc)
+                    (with-type (car name&proc) ; name
+                               (cdr name&proc) ; proc
+                               (car vals)
+                               cx
                                (lambda (cx) (list (state (frames-pushval rest #t) cx)))
                                (lambda (cx) (list (state (frames-pushval rest #f) cx))))))
             (else (error "invalid frame op" top))))))
@@ -229,13 +230,32 @@
         (test-equal-singleton? (string-append msg "(step " (number->string n) ")") frames)
         (loop (step frames) (+ i 1)))))
 
-  (test-equal-singleton? "drive a car" (step (toframes '(car (quote (1 . 0))))))
-  (test-equal-singleton? "drive a cdr" (step (toframes '(cdr (quote (1 . 0))))))
-  (test-equal-singleton? "drive a quote" (toframes '(quote (1 . 0))))
-  (test-equal-singleton? "drive a quote inside cdr" (toframes '(cdr (quote (1 . 0)))))
-
+  (print-and-test-sequence "drive a car" '(car (quote (1 . 0))) 3)
+  (print-and-test-sequence "drive a cdr" '(cdr (quote (1 . 0))) 3)
   (print-and-test-sequence "drive a call" '(call (lambda (v) (quote 0)) (quote 2)) 4)
   (print-and-test-sequence "drive a call with 2 args" '(call (lambda (x y) x) (quote 1) (quote 2)) 6)
   (print-and-test-sequence "drive a cons" '(cons (quote 0) (quote 2)) 4)
   (print-and-test-sequence "drive a vector" '(vector-ref (vector (quote 2)) (quote 0)) 4)
+
+  (print-and-test-sequence "drive a comparison #f" '(= (quote 2) (quote 0)) 4)
+  (print-and-test-sequence "drive a comparison #t" '(= (quote 2) (quote 2)) 4)
+  (print-and-test-sequence "drive a symbol=?" '(symbol=? (quote a) (quote a)) 4)
+  (print-and-test-sequence "drive a symbol=?" '(symbol=? (quote a) (quote b)) 4)
+
+  (print-and-test-sequence "drive a unary" '(null? (quote a)) 3)
+  (print-and-test-sequence "drive a unary" '(null? '()) 3)
+
+  (print-and-test-sequence "drive an if #t" '(if (quote #t) (quote 0) (quote 1)) 4)
+  (print-and-test-sequence "drive an if #f" '(if (quote #f) (quote 0) (quote 1)) 4)
+  (print-and-test-sequence "drive a nested if" '(if (quote #t) (if (quote #f) (quote 0) (quote 1)) (quote 2)) 6)
+
+  (print-and-test-sequence "drive a letrec"
+                           '(letrec ((len (lambda (lst)
+                                            (if (pair? lst)
+                                              (cons (quote 1) (call len (cdr lst))) ; todo change cons => +
+                                              (quote 0)))))
+                              (call len (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ()))))))
+                           42 #t)
+
+  ;(print-and-test-sequence "drive a +" '(+ (quote 2) (quote 0)) 4 #t) ; TODO
 )
