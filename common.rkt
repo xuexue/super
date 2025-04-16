@@ -131,6 +131,9 @@
         ((equal? c cx:false) cx:true)
         (else (list 'not c)))) ; #TODO: double not elimination; use structs
 
+(define (cx:has-type type v)
+  (list 'has-type type v))
+
 (define (cx:= v1 v2)
   (cond ((equal? v1 v2) cx:true)
         ((and (not (lvar? v1)) (not (lvar? v2))) cx:false)

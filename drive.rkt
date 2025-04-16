@@ -64,7 +64,7 @@
       ((pair? x) (on-pair x cx))
       ((lvar? x) (append (let ((p (cons (new-var) (new-var))))
                            (on-pair p (cx:and cx (cx:= p x))))
-                         (on-error (cx:and cx (cx:not (list 'has-type 'pair? x))))))
+                         (on-error (cx:and cx (cx:not (cx:has-type 'pair? x))))))
       (else      (on-error cx)))))
 
 ;; This assumes all vectors contain a single element.
@@ -74,7 +74,7 @@
       ((vector? x) (on-vector x cx))
       ((lvar?   x) (append (let ((v (vector (new-var))))
                              (on-vector v (cx:and cx (cx:= x v))))
-                           (on-error (cx:and cx (cx:not (list 'has-type 'vector? x))))))
+                           (on-error (cx:and cx (cx:not (cx:has-type 'vector? x))))))
       (else        (on-error cx)))))
 
 (define (with-= x1 x2 cx on-true on-false)
@@ -91,8 +91,8 @@
 (define (with-type t pred? x cx on-type on-not)
   (let ((x (walk x cx)))
     (cond
-      ((lvar? x) (append (on-type (cx:and cx (list 'has-type t x)))) ; make cx:has-type
-                         (on-not  (cx:and cx (cx:not (list 'has-type t x)))))
+      ((lvar? x) (append (on-type (cx:and cx (cx:has-type t x)))) ; make cx:has-type
+                         (on-not  (cx:and cx (cx:not (cx:has-type t x)))))
       ((pred? x) (on-type cx))
       (else      (on-not cx)))))
 
@@ -255,7 +255,7 @@
                                               (cons (quote 1) (call len (cdr lst))) ; todo change cons => +
                                               (quote 0)))))
                               (call len (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ()))))))
-                           42 #t)
+                           42)
 
   ;(print-and-test-sequence "drive a +" '(+ (quote 2) (quote 0)) 4 #t) ; TODO
 )
