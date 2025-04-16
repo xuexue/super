@@ -132,7 +132,16 @@
         (else (list 'not c)))) ; #TODO: double not elimination; use structs
 
 (define (cx:has-type type v)
-  (list 'has-type type v))
+  (if (lvar? v)
+    (list 'has-type type v)
+    (let* ((type&proc (assq type
+                            (map2 cons
+                                  '(null? boolean? pair? number? symbol? procedure? vector?)
+                                  (list null? boolean? pair? number? symbol? procedure? vector?))))
+           (proc (cdr type&proc)))
+      (if (proc v)
+        cx:true
+        cx:false))))
 
 (define (cx:= v1 v2)
   (cond ((equal? v1 v2) cx:true)

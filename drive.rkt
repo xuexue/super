@@ -245,6 +245,9 @@
   (print-and-test-sequence "drive a unary" '(null? (quote a)) 3)
   (print-and-test-sequence "drive a unary" '(null? '()) 3)
 
+  (print-and-test-sequence "drive a pair? #f" '(pair? '()) 3)
+  (print-and-test-sequence "drive a pair? #t" '(pair? (cons (quote 2) (quote 3))) 5)
+
   (print-and-test-sequence "drive an if #t" '(if (quote #t) (quote 0) (quote 1)) 4)
   (print-and-test-sequence "drive an if #f" '(if (quote #f) (quote 0) (quote 1)) 4)
   (print-and-test-sequence "drive a nested if" '(if (quote #t) (if (quote #f) (quote 0) (quote 1)) (quote 2)) 6)
