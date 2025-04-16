@@ -91,8 +91,8 @@
 (define (with-type t pred? x cx on-type on-not)
   (let ((x (walk x cx)))
     (cond
-      ((lvar? x) (append (on-type (cx:and cx (cx:has-type t x)))) ; make cx:has-type
-                         (on-not  (cx:and cx (cx:not (cx:has-type t x)))))
+      ((lvar? x) (append (on-type (cx:and cx (cx:has-type t x))) ; make cx:has-type
+                         (on-not  (cx:and cx (cx:not (cx:has-type t x))))))
       ((pred? x) (on-type cx))
       (else      (on-not cx)))))
 
@@ -259,6 +259,15 @@
                                               (quote 0)))))
                               (call len (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ()))))))
                            42)
-
   ;(print-and-test-sequence "drive a +" '(+ (quote 2) (quote 0)) 4 #t) ; TODO
+
+  (define lvar-a (lvar 'a))
+  (define lvar-frames (list `#s(frame pair? (,lvar-a) () ()) #s(frame halt () () ())))
+  (define lvar-result
+    (list (state (list #s(frame halt (#t) () ())) (cx:has-type 'pair? lvar-a))
+          (state (list #s(frame halt (#f) () ())) (cx:not (cx:has-type 'pair? lvar-a)))))
+  (test-equal?
+      "drive a pair? with lvars"
+      (drive (state lvar-frames constraint.empty))
+      lvar-result)
 )
