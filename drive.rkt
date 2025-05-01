@@ -12,49 +12,58 @@
 ;; TODO:
 (define (walk x cx) x)
 
-;; TODO: for faster residual code generation, we should attach labels to states indicating which logic variables and
-;; constraints that were introduced (in simplified/walked form according to existing constraints)
-;; - this is clearer than fishing around in the cx to figure out what changed relative to the parent state
-;; - we can then generate code based on the label alone
-;; - when the label is blank, this indicates that a transient step has been taken, which can be pruned
-;; - labels can also include let expressions
-;;   - so we just continue with one state corresponding to the let body
-;;   - no actual lexical variables need to be bound: maybe surprisingly, the let is binding a logic variable on its lhs
-;;   - this is less surprising when you consider how residual code is generated:
-;;     - we either have stopped on a value, which generates code to build that value
-;;     - or we have stopped on a logic variable, which means it has no equality constraints (it wouldn't be an lvar after walking)
-;;       in which case we residualize a lexical variable, which will match the
-;;       one residualized for the let lhs! (or recursive lambda parameter, in the case of folding, or normal lambda parameter
-;;       for the topmost entry)
-;;   - we don't need "decompose" nodes due to CBV evaluation order, which causes the rhs of a let binding to already be done
-;;     - and typically, constructor arguments have already been evaluated
-;;     - however, for better results (as achieved by supercompilation for CBN evaluation), we may want to delay evaluation
-;;     - depending on the effects we support, we can safely delay evaluation of some subcomputations by replacing them with
-;;       a fresh logic variable, and inserting an entry that maps this lvar to the postponed computation, likely represented
-;;       as a frame stack
-;;       - once driving stops, we must finish evaluating all remaining delayed computations
-;;       - additionally, any time the value of such an lvar is observed (e.g., by an accessor, predicate, if condition), we
-;;         resume the delayed computation by pushing it on top of the current stack in place of the lvar
-;;       - if we are not careful, there is some risk of this lvar being duplicated, which could increase the amount of work
-;;         done by the residual program
-;;       - so we may want to limit delaying to situations where references of the lvar would be linear (or affine)
-;;         - or, limit delaying in this way if the computation is expensive
-;;         - duplicating an inexpensive computation could be acceptable
-;;     - for simplificty, we can start by treating errors and non-termination as equivalent effects
-;;       - under this assumption, every computation becomes eligible for delaying, aside from the caveat about effort duplication
+;; TODO:
+;; States and residual code generation:
+;; - instead of lists of states, we should use a tree structure, with nodes representing call entry points, conditional branches,
+;;   let bindings, and in-progress states.  When an in-progress state becomes terminal, or folds, it will residualize an expression.
+;;   - some nodes (and edges) might be labelled with introduced constraints, to inform residual code generation
+;;   - unused call entries (not targeted by any folds) are transient steps, and can be pruned
+;;   - during driving, let bindings bind logic variables to residual expressions
+;;     - when the let binding is later residualized itself, these logic variables are turned into lexical variables
+;;       - we either have stopped on a value, which generates code to build that value
+;;       - or we have stopped on a logic variable, which means it has no equality constraints (it wouldn't be an lvar after walking)
+;;         in which case we residualize a lexical variable, which will match the
+;;         one residualized for the let lhs! (or recursive lambda parameter, in the case of folding, or normal lambda parameter
+;;         for the topmost entry)
+;;     - let bindings are *not* the history of delayed computations, which is a separate concept
+;;     - however, unobserved history computations eventually produce let bindings
+;; - we don't need "decompose" nodes due to CBV evaluation order, which causes the rhs of a let binding to already be done
+;;   - and typically, constructor arguments have already been evaluated
+;; - depending on the effects we support, we can (and should) safely delay evaluation of some computations by replacing
+;;   them with a fresh logic variable, and inserting a "history" entry that maps this lvar to the delayed computation
+;;   - computations that should definitely be delayed are primitive operations whose result is unknown, and procedure
+;;     calls that trigger the "whistle" (they risk non-termination, or are otherwise judged to be not worth pursuing)
+;;     - but for best results, it probably makes sense to delay everything until observation, or other guarantee of demand
+;;   - if an lvar associated with a history entry is observed as the condition of a branch (by using it as the condition of
+;;     an if expression, or using it in a way that could fail (requiring an implicit safety-checking branch)), we may be
+;;     able to apply has-type constraints in each branch based on the suspended computation in the history entry, in
+;;     addition to the == #f and =/= #f constraints applied to the lvar itself
+;;   - the history corresponds to computations that will potentially become let bindings in the residual code
+;;   - history entries can be removed early by participating as an argument in a fold (this is desirable)
+;;   - once driving stops, we must finish driving all remaining history entries, residualizing them as let-bindings
+;; - for simplificty, we can start by treating errors and non-termination as equivalent effects
+;;   - under this assumption, every computation becomes eligible for delaying, aside from the caveat about effort duplication
 ;; Folding:
-;; - we can fold when a prefix of our current frame stack pattern-matches with a complete stack from an earlier state
+;; - we can fold when the entire current frame stack pattern-matches with a complete stack from an earlier state
 ;;   - if our current complete stack matches, we can stop driving and generate a (recursive) procedure call (with appropriate
 ;;     arguments)
-;;   - more generally, if only a proper prefix of the current stack matches, we have to generate a let binding for the
-;;     procedure call, and continue driving the suffix frames as the body
-;;   - so ideally we would try to match the largest prefix we can first
-;;   - if we allow delayed computations, as mentioned in an earlier note, we should often be able to match the entirety of
-;;     our current stack
+;;   - we should check for folding when we are about to perform a procedure call (the operator and all operands have already been evaluated)
+;; - when we are about to perform a procedure call that corresponds to a fold target, but our stack does not unify with the
+;;   fold target, we should suspend the call (returning a logic variable) and continue normally
+;;   - we may later be able to fold with the suspended call as a subcomponent (e.g., the (map g (cdr xs)) in (map f (map g (cdr xs))))
+;;   - and if we don't manage to fold later, we will residualize a let binding for the suspended call, allowing it to be driven starting in
+;;     its own empty stack, eventually allowing it to successfully fold
+;;     - if a recursive procedure is not tail recursive, the recursive call will appear as an argument, which means at least one more
+;;       generalization step will be required, producing another let binding that begins a call in an empty stack, finally triggering a fold
 ;; TODO: cx:and needs to check for inconsistency, and we need to then detect this (it can return #f)
 ;; - we can then prune states whose cx is #f
 ;;   - in the residual code, this manifests as eliminating unnecessary conditional (i.e., (if predicate? _ _)) checks
 ;;   - because one of the branches is known to be impossible due to the inconsistent constraint
+;; - inconsistent states do NOT correspond to computing an "error"
+;;   - instead, operations that can produce an error will implicitly branch with a safety check
+;;     - the failure branch explicitly computes "error" and receives the appropriate negated has-type constraint
+;;       - if this constraint is inconsistent, it means an "error" is not possible, because we already have evidence that the operation is safe to perform
+;;     - the success branch receives the appropriate has-type constraint, allowing future safety checks to eliminate the error branch
 ;; TODO: to reduce the tedium, we might want to refactor the code to use a small, miniKanren-inspired formula DSL for expressing
 ;; constrained evaluation involving logic variables
 
