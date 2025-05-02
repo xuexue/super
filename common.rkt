@@ -74,6 +74,9 @@
                 (if kl (make-closure (cdr kl) env) (env-ref (caddr env) key))))
     (else     (error "invalid environment tag" env))))
 
+(define (env-walk env cx) env) ;TODO
+
+
 (define (quote-a E) (cadr E))
 
 (define (if-c E) (cadr   E))
@@ -148,6 +151,31 @@
         ((and (not (lvar? v1)) (not (lvar? v2))) cx:false)
         (else (list '= v1 v2))))
 
+(define (cx:+= v1 v2 v3)
+  (cond
+    ((and (number? v1) (number? v2)) ; can we use number?
+     (cx:= (+ v1 v2) v3))
+    ((and (number? v1) (number? v3)) ; can we use number?
+     (cx:= (- v3 v1) v2))
+    ((and (number? v2) (number? v3)) ; can we use number?
+     (cx:= (- v3 v2) v1))
+    (else (list '+= v1 v2 v3))))
+
+;; TODO:
+(define (walk x cx) x) ; value walk
+
 (define (state frame* constraint) (list frame* constraint))
 (define (state-frame*     st) (car  st))
 (define (state-constraint st) (cadr st))
+(define (state-reify st)
+  (let* ((frames (state-frame* st))
+         (cx     (state-constraint st)))
+    (state (map (lambda (fr)
+                  (let* ((vals   (frame-vals fr))
+                         (vals^  (map (lambda (v) (walk v cx)) vals))
+                         (env    (frame-env fr))
+                         (env^   (env-walk env cx)))
+                    (frame (frame-op fr) vals^ (frame-exprs fr) env^)))
+                frames)
+           cx)))
+

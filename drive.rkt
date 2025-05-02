@@ -9,8 +9,6 @@
 (define (new-var)
   (lvar (gensym 'x)))
 
-;; TODO:
-(define (walk x cx) x)
 
 ;; TODO:
 ;; States and residual code generation:
@@ -180,9 +178,23 @@
                 on-error)))
             ((assq op (map2 cons '(+) (list +)))
              => (lambda (name&proc)
-                  (error "todo")
-                  ))
-            ((assq op (map2 cons '(car cdr) (list car cdr)))
+                  (let ((n1 (walk (cadr vals) cx))
+                        (n2 (walk (car vals) cx))
+                        (proc (cdr name&proc)))
+                    (with-number
+                      n1
+                      cx
+                      (lambda (cx)
+                        (with-number
+                          n2
+                          cx
+                          (lambda (cx)
+                            (let* ((sum (new-var))
+                                   (cx (cx:and cx (cx:+= n1 n2 sum))))
+                               (list (state (frames-pushval rest sum) cx))))
+                         on-error))
+                    on-error))))
+       ((assq op (map2 cons '(car cdr) (list car cdr)))
              => (lambda (name&proc)
                   (let ((val  (car vals))
                         (proc (cdr name&proc)))
@@ -220,14 +232,14 @@
                                                 rest)
                                   cx))))
          (else (error "invalid frame op" top)))))))
-
+    
 
 (module+ test
   (define (test-equal-singleton? msg frames (constraints constraint.empty))
     ;(pretty-write (drive (state frames constraints)))
     (test-equal?
       msg
-      (drive (state frames constraints))
+      (map state-reify (drive (state frames constraints)))
       (list (state (step frames) constraints))))
 
   (define (print-and-test-sequence msg expr n (verbose #f))
@@ -268,7 +280,8 @@
                                               (quote 0)))))
                               (call len (cons (quote 1) (cons (quote 0) (cons (quote 1) (quote ()))))))
                            42)
-  ;(print-and-test-sequence "drive a +" '(+ (quote 2) (quote 0)) 4 #t) ; TODO
+  (print-and-test-sequence "drive a +" '(+ (quote 2) (quote 0)) 4 #t) ; TODO
+  (print-and-test-sequence "drive a +" '(+ (quote 1) (+ (quote 2) (quote 3))) 6 #t) ; TODO
 
   (define lvar-a (lvar 'a))
   (define lvar-frames (list `#s(frame pair? (,lvar-a) () ()) #s(frame halt () () ())))
