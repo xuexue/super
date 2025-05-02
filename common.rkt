@@ -74,8 +74,19 @@
                 (if kl (make-closure (cdr kl) env) (env-ref (caddr env) key))))
     (else     (error "invalid environment tag" env))))
 
-(define (env-walk env cx) env) ;TODO
-
+(define (env-walk env cx)
+  (if (equal? env env.empty)
+    env.empty
+    (let ((envtype (car env))
+          (kv*     (cadr env))
+          (env^    (caddr env)))
+      (define (kv-walk kv)
+        (let ((k (car kv)) (v (cdr kv)))
+          (cons k (walk v cx))))
+      (case envtype
+        ((call)   (list 'call (map kv-walk kv*) (env-walk env^ cx)))
+        ((letrec) (list 'letrec kv* (env-walk env^ cx)))
+        (else     (error "invalid environment tag" env))))))
 
 (define (quote-a E) (cadr E))
 
