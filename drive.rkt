@@ -65,6 +65,55 @@
 ;; TODO: to reduce the tedium, we might want to refactor the code to use a small, miniKanren-inspired formula DSL for expressing
 ;; constrained evaluation involving logic variables
 
+;; Possible DSL sketch:
+;; - but this might not handle type constraints the way we want, as described above
+;; primop +:
+;; ((fresh ()
+;;   (numbero x)
+;;   (numbero y)
+;;   (compute + x y))  ; every topmost DSL formula must end with either a return or compute form to produce a value
+;;  st)
+;; primop =:
+;; ((fresh ()
+;;   (numbero x)
+;;   (numbero y)
+;;   ;; Except this should probably be (compute = x y) instead, right?
+;;   (conde
+;;    ((==  x y) (return #t))
+;;    ((=/= x y) (return #f))))
+;;  st)
+;; Another possible sketch:
+;; primop +:
+;; ((perform
+;;   (number?! x)
+;;   (number?! y)
+;;   (compute + x y))
+;;  st)
+;; Type assertions such as (number?! V) will do one of the following:
+;; - when V is a logic variable:
+;;   - suspend the remainder of this sequence, packaged with the current ENV
+;;   - return a new logic variable associated with the suspension
+;; - when V is a value that satisfies the assertion:
+;;   - proceed to the next action in the sequence
+;; - when V is a value that fails the assertion:
+;;   - return an error result
+;; Where (compute OP V ..) does one of the following:
+;; - when at least one V is a logic variable:
+;;   - suspend this OP, packaged with the current ENV
+;;   - return a new logic variable associated with the suspension
+;; - when V ... are not logic variables:
+;;   - returns the result of performing the OP using V ... and the current ENV
+;; Additionally, when a compute suspension is forced, it will "observe" each V as described in the notes above
+;; - this means if the V is a logic variable associated with a suspension, that suspension
+;;   is also forced, temporarily interrupting the forcing of the current suspension (i.e., forcing is resolved LIFO)
+;; Do we always have to package an ENV with a suspension?  It seems to only be necessary for OPs with embedded
+;; expressions, specifically (if E E) and (letrec ((<symbol> LAM) ...) E).
+;; - (lookup <symbol>) and LAM ops would also need an ENV, but these OPs will never be suspended
+;; - It looks like we could redesign frames to not include the ENV, and expect it to already be packaged in any OPs that need it
+;;   - To do this, converting an expression to a frame stack would require an ENV, which is already the case
+;; Instead of the DSL sketch, an alternative is to partition OPs by whether they observe their Vs or not
+;; - although some OPs still need type assertions indicated in some way
+
 (define (with-pair x cx on-pair on-error)
   (let ((x (walk x cx)))
     (cond
@@ -232,7 +281,7 @@
                                                 rest)
                                   cx))))
          (else (error "invalid frame op" top)))))))
-    
+
 
 (module+ test
   (define (test-equal-singleton? msg frames (constraints constraint.empty))
