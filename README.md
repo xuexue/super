@@ -100,10 +100,15 @@ that is, it has no subexpressions remaining to be evaluated.
 A stack also has the `halt` frame  in the outer most context, i.e. at the bottom.
 
 
-The file `drive.rkt` contains a driver. The driver takes a *state* (defined below),
-a list of *logic variables* (unbound/open variables in the expression being evaluated),
-and takes an expansion step to produce a list of potential next *states*.
-Unlike `step`, the function `drive` can produce multiple states.
+The file `drive.rkt` contains a driver, that takes an expansion step to produce
+the next *state*. The driver takes:
+
+- e-and-R: a stack of frames (`STACK` above)
+- c: constraint store (`C` below **TODO**)
+- rho: a memoization list (to be defined)
+- (maybe a list of *logic variables*? the unbound/open variables in the expression being evaluated?
+
+The drive produces a value of type `NODE`.
 
 ```
 ;; Value: redefinition of a value to also include a *logic variable*
@@ -112,17 +117,22 @@ V  ::= A | #(V) | (V . V) | #s(closure (<symbol> ...) E ENV) | LV
 ;; Logic Variable
 LV    ::= #s(lvar <symbol>)
 
-;; Types
+;; types
 TYPE ::= null? | num? | pair? | symbol? | boolean? | procedure? | vector?
 
 ;; constraint
-C  ::= (= V V)
-     | (has-type TYPE V)
-     | (not C)
-     | (and C ...)
-     | (or  C ...)
+CV ::= (has-type TYPE) | (not-has-type TYPE) | (= V) | (not-= V)
+C  ::= { LV : CV }  ;; implicitly a conjunction of these things
 
-;; State
-STATE = (STACK . C)
+;; driving nodes
+N ::= done | (transient STACK C)
+    | (if E (STACK C) (STACK C))
+    | (decompose ???)
+    | (fold ???)
 ```
 
+## Next Steps
+
+- write new prefab types for constraints, nodes
+- new type signature for drive
+- port existing code to these new types
