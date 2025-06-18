@@ -141,6 +141,7 @@
 (define (dnode:done)            (dnode 'done '()))
 (define (dnode:transient state) (dnode 'transient state))
 (define (dnode:if e s1 s2)      (dnode 'if `(,e ,s1 ,s2)))
+(define (dnode:todo debug)      (dnode 'TODO debug)) ; TODO :remove
 ;(define (dnode-if-e n)  (car (dnode-payload n))
 ;(define (dnode-if-s1 n) (cadr (dnode-payload n))
 ;(define (dnode-if-s2 n) (caddr (dnode-payload n))
@@ -163,52 +164,3 @@
                     (frame (frame-op fr) vals^ (frame-exprs fr) env^)))
                 frames)
            cx)))
-
-
-
-
-
-; OLD STUFF - TO DELETE
-
-(define cx:true #t)
-(define cx:false #f)
-(define constraint.empty cx:true)
-(define (cx:and c1 c2)
-  (cond ((equal? c1 cx:true) c2)
-        ((equal? c2 cx:true) c1)
-        ((equal? c1 cx:false) cx:false)
-        ((equal? c2 cx:false) cx:false)
-        (else (list 'and c1 c2))))
-
-(define (cx:not c)
-  (cond ((equal? c cx:true) cx:false)
-        ((equal? c cx:false) cx:true)
-        (else (list 'not c)))) ; #TODO: double not elimination; use structs
-
-(define (cx:has-type type v)
-  (if (lvar? v)
-    (list 'has-type type v)
-    (let* ((type&proc (assq type
-                            (map2 cons
-                                  '(null? boolean? pair? number? symbol? procedure? vector?)
-                                  (list null? boolean? pair? number? symbol? procedure? vector?))))
-           (proc (cdr type&proc)))
-      (if (proc v)
-        cx:true
-        cx:false))))
-
-(define (cx:= v1 v2)
-  (cond ((equal? v1 v2) cx:true)
-        ((and (not (lvar? v1)) (not (lvar? v2))) cx:false)
-        (else (list '= v1 v2))))
-
-(define (cx:+= v1 v2 v3)
-  (cond
-    ((and (number? v1) (number? v2)) ; can we use number?
-     (cx:= (+ v1 v2) v3))
-    ((and (number? v1) (number? v3)) ; can we use number?
-     (cx:= (- v3 v1) v2))
-    ((and (number? v2) (number? v3)) ; can we use number?
-     (cx:= (- v3 v2) v1))
-    (else (list '+= v1 v2 v3))))
-
