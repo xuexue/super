@@ -136,6 +136,8 @@
 (define (cx:= val)         (cx '= val))
 (define (cx:not-= val)     (cx 'not-= val))
 
+(define cx*.empty '())
+
 ; driving nodes
 (struct dnode (op payload) #:prefab)
 (define (dnode:done)            (dnode 'done '()))

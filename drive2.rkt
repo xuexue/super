@@ -53,3 +53,25 @@
          (else (error "invalid frame op" top)))))))
 
 
+
+
+(module+ test
+  (define (test-equal-singleton? msg frames (constraints cx*.empty))
+    ;(pretty-write (drive (state frames constraints)))
+    (test-equal?
+      msg
+      (map state-reify (drive (state frames constraints)))
+      (list (state (step frames) constraints))))
+
+  (define (print-and-test-sequence msg expr n (verbose #f))
+    (define initframes (toframes expr))
+    (let loop ((frames initframes)
+               (i      1))
+      (when (<= i n)
+        (when verbose (pretty-write frames))
+        (test-equal-singleton? (string-append msg "(step " (number->string n) ")") frames)
+        (loop (step frames) (+ i 1)))))
+
+  (print-and-test-sequence "drive a car" '(car (quote (1 . 0))) 3)
+  (print-and-test-sequence "drive a cdr" '(cdr (quote (1 . 0))) 3)
+)
