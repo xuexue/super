@@ -129,7 +129,47 @@
 ; logic variable
 (struct lvar (name) #:prefab)
 
-; constraints
+; constraint constructors (TODO: represent top and bottom?)
+(struct cx (op payload) #:prefab)
+(define (cx:has-type type) (cx 'has-type type))
+(define (cx:not-type type) (cx 'not-type type))
+(define (cx:= val)         (cx '= val))
+(define (cx:not-= val)     (cx 'not-= val))
+
+; driving nodes
+(struct dnode (op payload) #:prefab)
+(define (dnode:done)            (dnode 'done '()))
+(define (dnode:transient state) (dnode 'transient state))
+(define (dnode:if e s1 s2)      (dnode 'if `(,e ,s1 ,s2)))
+;(define (dnode-if-e n)  (car (dnode-payload n))
+;(define (dnode-if-s1 n) (cadr (dnode-payload n))
+;(define (dnode-if-s2 n) (caddr (dnode-payload n))
+
+
+;; TODO:
+(define (walk x cx) x) ; value walk
+
+(define (state frame* constraint) (list frame* constraint))
+(define (state-frame*     st) (car  st))
+(define (state-constraint st) (cadr st))
+(define (state-reify st)
+  (let* ((frames (state-frame* st))
+         (cx     (state-constraint st)))
+    (state (map (lambda (fr)
+                  (let* ((vals   (frame-vals fr))
+                         (vals^  (map (lambda (v) (walk v cx)) vals))
+                         (env    (frame-env fr))
+                         (env^   (env-walk env cx)))
+                    (frame (frame-op fr) vals^ (frame-exprs fr) env^)))
+                frames)
+           cx)))
+
+
+
+
+
+; OLD STUFF - TO DELETE
+
 (define cx:true #t)
 (define cx:false #f)
 (define constraint.empty cx:true)
@@ -171,22 +211,4 @@
     ((and (number? v2) (number? v3)) ; can we use number?
      (cx:= (- v3 v2) v1))
     (else (list '+= v1 v2 v3))))
-
-;; TODO:
-(define (walk x cx) x) ; value walk
-
-(define (state frame* constraint) (list frame* constraint))
-(define (state-frame*     st) (car  st))
-(define (state-constraint st) (cadr st))
-(define (state-reify st)
-  (let* ((frames (state-frame* st))
-         (cx     (state-constraint st)))
-    (state (map (lambda (fr)
-                  (let* ((vals   (frame-vals fr))
-                         (vals^  (map (lambda (v) (walk v cx)) vals))
-                         (env    (frame-env fr))
-                         (env^   (env-walk env cx)))
-                    (frame (frame-op fr) vals^ (frame-exprs fr) env^)))
-                frames)
-           cx)))
 

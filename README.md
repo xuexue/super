@@ -103,8 +103,7 @@ A stack also has the `halt` frame  in the outer most context, i.e. at the bottom
 The file `drive.rkt` contains a driver, that takes an expansion step to produce
 the next *state*. The driver takes:
 
-- e-and-R: a stack of frames (`STACK` above)
-- c: constraint store (`C` below **TODO**)
+- state: STATE below
 - rho: a memoization list (to be defined)
 - (maybe a list of *logic variables*? the unbound/open variables in the expression being evaluated?
 
@@ -121,18 +120,20 @@ LV    ::= #s(lvar <symbol>)
 TYPE ::= null? | num? | pair? | symbol? | boolean? | procedure? | vector?
 
 ;; constraint
-CV ::= (has-type TYPE) | (not-has-type TYPE) | (= V) | (not-= V)
-C  ::= { LV : CV }  ;; implicitly a conjunction of these things
+CX ::= (has-type TYPE) | (not-type TYPE) | (= V) | (not-= V)
+C  ::= { LV : CX }  ;; implicitly a conjunction of these things
+
+;; state
+STATE ::= (state STACK C)
 
 ;; driving nodes
-N ::= done | (transient STACK C)
-    | (if E (STACK C) (STACK C))
+N ::= done | (transient STATE)
+    | (if E STATE STATE)
     | (decompose ???)
     | (fold ???)
 ```
 
 ## Next Steps
 
-- write new prefab types for constraints, nodes
 - new type signature for drive
 - port existing code to these new types
