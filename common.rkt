@@ -129,6 +129,12 @@
 ; logic variable
 (struct lvar (name) #:prefab)
 
+; type-mapping
+(define types-to-ops
+   (map2 cons
+         '(null? boolean? pair? number? symbol? procedure? vector?)
+         (list null? boolean? pair? number? symbol? procedure? vector?)))
+
 ; constraint constructors (TODO: represent top and bottom?)
 (struct cx (op payload) #:prefab)
 (define (cx:has-type type) (cx 'has-type type))
@@ -136,11 +142,14 @@
 (define (cx:= val)         (cx '= val))
 (define (cx:not-= val)     (cx 'not-= val))
 
+
 (define cx*.empty '())
+;(define (cx*:and cx* lvar cx) 'TODO)
+
 
 ; driving nodes
 (struct dnode (op payload) #:prefab)
-(define (dnode:done)            (dnode 'done '()))
+(define (dnode:done state)      (dnode 'done state))
 (define (dnode:transient state) (dnode 'transient state))
 (define (dnode:if e s1 s2)      (dnode 'if `(,e ,s1 ,s2)))
 (define (dnode:todo debug)      (dnode 'TODO debug)) ; TODO :remove

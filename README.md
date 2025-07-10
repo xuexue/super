@@ -127,13 +127,14 @@ C  ::= { LV : CX }  ;; implicitly a conjunction of these things
 STATE ::= (state STACK C)
 
 ;; driving nodes
-N ::= done | (transient STATE)
-    | (if E STATE STATE)
+N ::= done | error | (transient STATE)
+    | (canfail C STATE)
+    | (if V STATE STATE)
     | (decompose ???)
-    | (fold ???)
+    | (call name args STATE)  ; name is freshly generated (h0, h1 etc.)
+    | (fold target-name arg-substitution)  ; arg-substitution formed by MSG of the args for both target call and fold call
 ```
 
 ## Next Steps
 
-- new type signature for drive
 - port existing code to these new types

@@ -1,0 +1,62 @@
+
+drive :: (state stack c) -> memo_list -> N
+
+
+drive (State: ((Frame: op vals env) : rest) c) rho
+
+# op == halt
+    - return a "done" node with the ENTIRE STATE
+
+# op == (lookup <s>)
+    - look up the symbol <s> in the environment, get a value
+    - return a transient node with the looked-up value
+
+# op == (quote <a>)
+# op == cons
+# op == vector
+
+    - these are all transient!!
+    - for cons and vector, do we need to add a type constraint to the output (if it is a logic variable?)
+
+# op == + ; vals == (v1 v2)
+
+    (dnode:canfail  ; <-- smart constructor that checks the constraints and may return a transient/error node instead
+                    ; <-- smart constructor might also assign a logic variable to the otuput and constrain it to a number
+        (and (number? v1) (number? v2)) 
+        (state (frames-pushval rest sum) cx-withv1-v2-output-numbers))
+
+# op == LAM
+
+     - transient node where a procedure value (closure capturing current environment) has been pushed
+
+# op == car, cdr, vector-ref
+
+    (dnode:canfail  ; <-- smart constructor that checks the constraints and may return a transient/error node instead
+        (pair? ...)
+        (state ...))
+
+# op == =
+
+    - same as + but returns a boolean
+
+# op == symbol?, null?, boolean? ...
+
+    - all transient?
+
+# op == (if E1 E2)
+
+    - (if val State-from-E1 State-from-E2)
+
+# op == call
+
+    - will have to refer to memo table (rho) to decide whether to fold or add a new entry
+    - possibly using another smart constructor that decides whether to produce a fold or call node
+        - during a subsequent pass, if a call node is never targeted by a fold, it can be converted to a transient node
+    - it could also decide to generalize if the whistle blows
+        - is decompose the right node type to use for generalization?
+    - could also "canfail" if first value is not a procedure
+    - could also "canfail" if number of arguments is incorrect for the procedure being called
+
+# op == letrec
+
+    - transient node with a state whose top frame is produced by the letrec body E, and has an environment extended with a letrec entry
