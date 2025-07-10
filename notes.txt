@@ -1,4 +1,17 @@
+TODO:
 
+1. canfail constructor
+
+1.a  separate reprsentations for constraints vs substittuions
+2. all the transient stuff
+3. reification for testing
+4. ...testing
+5. lambdas & calls
+...
+N. still not touching letrec with a 10 foot pole
+
+
+--------------------
 drive :: (state stack c) -> memo_list -> N
 
 

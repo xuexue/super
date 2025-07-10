@@ -39,19 +39,11 @@
               (lambda (name&proc)
                 (let ((val  (car vals))
                       (proc (cdr name&proc)))
-                  (cond
-                    ((pair? val)
-                     (dnode:transient (state (frames-pushval rest (proc val)) cx)))
-                    ((lvar? val)
-                     (dnode:todo op))
-                     #;(case (cx*:check val (cx:has-type 'pair?) cx*)
-                          ((#t) (dnode:transient (state (frames-pushval rest (proc val)) cx))
-                          ((#f) (dnode:transient (state (frames-error frames) cx)))
-                          (else (dnode:if `(pair? ,val) ; expression
-                                          (state (frames-pushval rest (proc val)) (cx*:and cx val (cx:has-type 'pair)))
-                                          (state (frames-error frames)            (cx*:and cx val (cx:not-type 'pair)))))))
-
-                  ))))
+                  (dnode:canfail 
+                    `((,val . pair)) ; list of (value, type) pairs TODO prettify
+                    cx
+                    (lambda () (frames-pushval rest (proc val)))))
+                  ))
              ((assq op types-to-ops)
               =>
               (dnode:todo op))))))

@@ -1,6 +1,7 @@
 #lang racket/base
 (provide (all-defined-out))
 (require racket/bool)
+(require racket/match)
 
 (define (atom? x) (or (null? x) (boolean? x) (number? x) (symbol? x)))
 (define (atom=? a b)
@@ -143,7 +144,149 @@
 (define (cx:not-= val)     (cx 'not-= val))
 
 
-(define cx*.empty '())
+(define lvar=>cx.empty '()) ; { lvar: [ cx ... ] }
+
+(define (lvar=>cx-add cx* lvar cx)
+  (let ((entry (assq lvar cx*)))
+    (if entry
+        (cdr entry)
+        '())))
+
+(define (value-of-type? v t)
+  (case t
+    [(null?)     (null? v)]
+    [(boolean?)  (boolean? v)]
+    [(pair?)     (pair? v)]
+    [(number?)   (number? v)]
+    [(symbol?)   (symbol? v)]
+    [(procedure?)(procedure? v)]
+    [(vector?)   (vector? v)]
+    [else        #f]))
+
+(define (types-compatible? t1 t2)
+  (eq? t1 t2))
+      
+(define (conflict? cx existing)
+  (let ((op1 (cx-op cx))
+        (pl1 (cx-payload cx))
+        (op2 (cx-op existing))
+        (pl2 (cx-payload existing)))
+    (match (list op1 op2)
+      [(list 'has-type 'not-type)
+       (equal? pl1 pl2)]
+      [(list 'not-type 'has-type)
+       (equal? pl1 pl2)]
+      [(list '= 'not-=)
+       (equal? pl1 pl2)]
+      [(list 'not-= '=)
+       (equal? pl1 pl2)]
+      [(list 'has-type '=)
+       (not (value-of-type? pl2 pl1))]
+      [(list '= 'has-type)
+       (not (value-of-type? pl1 pl2))]
+      [(list 'has-type 'has-type)
+       (not (types-compatible? pl1 pl2))]
+      [(list '= '=)
+       (not (equal? pl1 pl2))]
+      [_ #f])))
+
+
+
+(define (cx-conflicts? cx-list cx)
+
+  (foldl 
+     (lambda (e cx-list^)
+        (cond
+         [(conflict? cx e) #f]
+         [(subsumes? cx e) cx-list^] ; new cx subsumes e -- do not add acc
+         [(subsumes? e cx) ] ; old e subsumes new cx; would like to short-circuit so, so maybe not fold?
+      cx-list
+  ))
+
+
+;; 5 possible constraint states for an lvar (forms a lattice):
+;; - no constraints (top of lattice)
+;; - any number of not-type and not-= constraints (the not-type constraints may obviate some not-= constraints)
+;; - single type constraint and possible not-= constraints (the type constraint may obviate some not-= constraints)
+;; - single boolean type constraint (no not-= constraints possible, since boolean exclusions would be simplified to equality)
+;; - single equality constraint
+;; So we can implement constraint conflict detection and subsumption via lattice-meet, which will also allow us to merge two logic variables later
+
+;; New lattice-based constraint representation
+(struct cx-top () #:prefab) ; top element - no constraints
+(struct cx-not (not-types not-vals) #:prefab) ; not-types: set of types to exclude, not-vals: set of values to exclude
+(struct cx-type (type not-vals) #:prefab) ; type: the required type, not-vals: set of values to exclude
+(struct cx-boolean () #:prefab) ; boolean type constraint (no not-vals possible)
+(struct cx-eq (val) #:prefab) ; val: the required value
+
+;; Lattice meet operation - returns the greatest lower bound or #f if inconsistent
+(define (cx-meet cx1 cx2)
+  (match* (cx1 cx2)
+    ;; Top element cases
+    [((cx-top) cx2) cx2]
+    [(cx1 (cx-top)) cx1]
+    
+    ;; Equality cases
+    [((cx-eq val1) (cx-eq val2))
+     (and (equal? val1 val2) (cx-eq val1))]
+    [((cx-eq val) (cx-type type not-vals))
+     (and (value-of-type? val type) (not (set-member? not-vals val)) (cx-eq val))]
+    [((cx-type type not-vals) (cx-eq val))
+     (cx-meet (cx-eq val) (cx-type type not-vals))]
+    [((cx-eq val) (cx-boolean))
+     (and (boolean? val) (cx-eq val))]
+    [((cx-boolean) (cx-eq val))
+     (cx-meet (cx-eq val) (cx-boolean))]
+    [((cx-eq val) (cx-not not-types not-vals))
+     (and (not (set-member? not-types (type-of val))) (not (set-member? not-vals val)) (cx-eq val))]
+    [((cx-not not-types not-vals) (cx-eq val))
+     (cx-meet (cx-eq val) (cx-not not-types not-vals))]
+    
+    ;; Boolean cases
+    [((cx-boolean) (cx-boolean))
+     (cx-boolean)]
+    [((cx-boolean) (cx-not not-types other-not-vals))
+     (and (not (set-member? not-types 'boolean?)) 
+          (let ((all-not-vals other-not-vals))
+            (cond
+              [(set-member? all-not-vals #t) (cx-eq #f)]
+              [(set-member? all-not-vals #f) (cx-eq #t)]
+              [else (cx-boolean)])))]
+    [((cx-not not-types other-not-vals) (cx-boolean))
+     (cx-meet (cx-boolean) (cx-not not-types other-not-vals))]
+    
+    ;; Type cases
+    [((cx-type type1 not-vals1) (cx-type type2 not-vals2))
+     (and (types-compatible? type1 type2) (cx-type type1 (set-union not-vals1 not-vals2)))]
+    [((cx-type type not-vals) (cx-not not-types other-not-vals))
+     (and (not (set-member? not-types type)) 
+          (let ((filtered-not-vals (set-filter (lambda (v) (not (set-member? not-types (type-of v)))) not-vals))
+            (cx-type type (set-union filtered-not-vals (set-filter (lambda (v) (value-of-type? v type)) other-not-vals)))))]
+    [((cx-not not-types other-not-vals) (cx-type type not-vals))
+     (cx-meet (cx-type type not-vals) (cx-not not-types other-not-vals))]
+    
+    ;; Not cases
+    [((cx-not not-types1 not-vals1) (cx-not not-types2 not-vals2))
+     (cx-not (set-union not-types1 not-types2) (set-union not-vals1 not-vals2))]))
+
+;; Helper function to get the type of a value
+(define (type-of val)
+  (cond
+    [(null? val) 'null?]
+    [(boolean? val) 'boolean?]
+    [(pair? val) 'pair?]
+    [(number? val) 'number?]
+    [(symbol? val) 'symbol?]
+    [(procedure? val) 'procedure?]
+    [(vector? val) 'vector?]
+    [else 'unknown]))
+
+
+(define (check-constraint val type cx*)
+  (if (lvar? val)
+      (lvar=>cx-add cx* val (cx:has-type type))
+      'check-if-value-has-the-right-type))
+
 ;(define (cx*:and cx* lvar cx) 'TODO)
 
 
@@ -153,10 +296,23 @@
 (define (dnode:transient state) (dnode 'transient state))
 (define (dnode:if e s1 s2)      (dnode 'if `(,e ,s1 ,s2)))
 (define (dnode:todo debug)      (dnode 'TODO debug)) ; TODO :remove
+(define (dnode:error debug)     (dnode 'error debug)) 
 ;(define (dnode-if-e n)  (car (dnode-payload n))
 ;(define (dnode-if-s1 n) (cadr (dnode-payload n))
 ;(define (dnode-if-s2 n) (caddr (dnode-payload n))
 
+(define (dnode:canfail constraints cx th-frames)
+  ; assume constraints has only one (value, type) pair
+  (match constraints
+    ((list (cons val type))
+     (let ((cx^ (check-constraint val type cx)))
+       (cond
+         [(eqv? cx cx^) ; we can make this less expensive
+          (dnode:transient (state (th-frames) cx^))]
+         [(not cx^) 
+          (dnode:error constraints)]
+         [else
+          (dnode 'canfail `(,constraints ,(state (th-frames) cx^)))])))))
 
 ;; TODO:
 (define (walk x cx) x) ; value walk
