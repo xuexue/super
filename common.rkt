@@ -1,6 +1,7 @@
 #lang racket/base
 (provide (all-defined-out))
 (require racket/bool)
+(require racket/set)
 (require racket/match)
 
 (define (atom? x) (or (null? x) (boolean? x) (number? x) (symbol? x)))
@@ -199,10 +200,36 @@
         (cond
          [(conflict? cx e) #f]
          [(subsumes? cx e) cx-list^] ; new cx subsumes e -- do not add acc
-         [(subsumes? e cx) ] ; old e subsumes new cx; would like to short-circuit so, so maybe not fold?
-      cx-list
+         [(subsumes? e cx) 'TODO] ; old e subsumes new cx; would like to short-circuit so, so maybe not fold?
+        ))cx-list
   ))
 
+(define (subsumes? cx1 cx2)
+  "Returns #t if cx1 subsumes cx2 (i.e., cx1 is more general or equal to cx2), #f otherwise."
+  (cond
+    [(equal? cx1 cx2) #t]
+    [(cx-top? cx1) #t] ; top subsumes everything
+    [(cx-top? cx2) #f] ; nothing but top subsumes top
+    [(cx-eq? cx1)
+     (and (cx-eq? cx2)
+          (equal? (cx-eq-val cx1) (cx-eq-val cx2)))]
+    [(cx-boolean? cx1)
+     (or (cx-boolean? cx2)
+         (and (cx-eq? cx2)
+              (boolean? (cx-eq-val cx2))))] ; boolean subsumes boolean and eq to #t/#f
+    [(cx-type? cx1)
+     (cond
+       [(cx-type? cx2)
+         (and (eq? (cx-type-type cx1) (cx-type-type cx2))
+              (subset? (cx-type-not-vals cx1) (cx-type-not-vals cx2)))]
+       [(cx-eq? cx2)
+        (and (value-of-type? (cx-eq-val cx2) (cx-type-type cx1))
+             (not (set-member? (cx-type-not-vals cx1) (cx-eq-val cx2))))])]
+    [(cx-not? cx1)
+      (and (cx-not? cx2)
+           (subset? (cx-not-not-types cx1) (cx-not-not-types cx2))
+           (subset? (cx-not-not-vals cx1) (cx-not-not-vals cx2)))]
+    [else #f]))
 
 ;; 5 possible constraint states for an lvar (forms a lattice):
 ;; - no constraints (top of lattice)
@@ -260,8 +287,8 @@
      (and (types-compatible? type1 type2) (cx-type type1 (set-union not-vals1 not-vals2)))]
     [((cx-type type not-vals) (cx-not not-types other-not-vals))
      (and (not (set-member? not-types type)) 
-          (let ((filtered-not-vals (set-filter (lambda (v) (not (set-member? not-types (type-of v)))) not-vals))
-            (cx-type type (set-union filtered-not-vals (set-filter (lambda (v) (value-of-type? v type)) other-not-vals)))))]
+          (let ((filtered-not-vals (filter (lambda (v) (not (set-member? not-types (type-of v)))) not-vals)))
+            (cx-type type (set-union filtered-not-vals (filter (lambda (v) (value-of-type? v type)) other-not-vals)))))]
     [((cx-not not-types other-not-vals) (cx-type type not-vals))
      (cx-meet (cx-type type not-vals) (cx-not not-types other-not-vals))]
     
