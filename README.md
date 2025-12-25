@@ -28,7 +28,7 @@ E ::=
     | (cdr E)
     | (vector-ref E E)
     ;; predicates
-    | (= E E)
+    | (= E E) ; fails for non-numbers
     | (symbol=? E E)
     | (null? E)
     | (boolean? E)
@@ -119,10 +119,6 @@ LV    ::= #s(lvar <symbol>)
 ;; types
 TYPE ::= null? | num? | pair? | symbol? | boolean? | procedure? | vector?
 
-;; constraint
-CX ::= (has-type TYPE) | (not-type TYPE) | (= V) | (not-= V)
-C  ::= { LV : CX }  ;; implicitly a conjunction of these things
-
 ;; state
 STATE ::= (state STACK C)
 
@@ -134,6 +130,43 @@ N ::= done | error | (transient STATE)
     | (call name args STATE)  ; name is freshly generated (h0, h1 etc.)
     | (fold target-name arg-substitution)  ; arg-substitution formed by MSG of the args for both target call and fold call
 ```
+
+Constraints are described below
+
+## Operations on Constraints
+
+Constraint representation
+
+```
+;; constraint
+CX ::= (has-type TYPE) | (not-type TYPE) | (= V) | (not-= V)
+C  ::= { LV : (CX CX ...) }  ;; implicitly a conjunction of these things
+```
+
+Constraint operations
+
+```
+; adding of new constraints, with possible failure
+(cx-add CX C)
+
+
+; combine two sets of constraint-stores, arising from different frames.
+; e.g. in an expression (+ E1 E2), evaluating E1 produces C1, and E2 => C2
+(cx-combine C1 C2)
+; ==> how would this work with potentially different logic variable names?
+
+
+; check if two sets of constraints are identical
+; "with respect to the remaining computation" (whatever that means)
+; "obsevably equivalent"
+;   maybe don't need this? check equality w.r.t. some reified thingy?
+(cx-= C1 C2)
+
+```
+
+- smartly add new constraints (but can fail if the new constraint
+  does not mesh well with the old ones).
+  this is like unification?
 
 ## Next Steps
 
